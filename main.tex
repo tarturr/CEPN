@@ -1,0 +1,801 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{titlesec}
+\usepackage{amssymb}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[
+   backend=biber,
+   sorting=nyt,
+   citestyle=alphabetic-verb,
+   bibstyle=alphabetic,
+]{biblatex}
+\usepackage{minted}
+\usepackage[T1]{fontenc}
+\usepackage[sfdefault]{biolinum}
+\usepackage{hyperref}
+\usepackage{unicode-math}
+
+\addbibresource{bibliography.bib}
+
+\newtheorem{definition}{Définition}
+\newtheorem{property}{Propriété}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemme}
+\newtheorem{theorem}{Théorème}
+\newtheorem{corollary}{Corollaire}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remarque}
+
+\newcommand{\preb}[1]{\text{}^\bullet #1}
+\newcommand{\postb}[1]{#1^\bullet}
+\newcommand{\reach}[3][]{\mathcal{R}^{#1}(\mathcal{#2}, #3)}
+\newcommand{\creach}[3][]{\mathbb{Q}\reach[#1]{#2}{#3}}
+\newcommand{\reaches}[1][]{\xrightarrow{#1}}
+\newcommand{\reachess}{\reaches^*}
+\newcommand{\creaches}[1][]{\reaches[#1]_{\mathbb{Q}}}
+\newcommand{\creachess}{\creaches^*}
+\newcommand{\natinduction}[5]{
+    Posons $\mathcal{#1}(n)$ la propriété \[#3.\]
+    Montrons $\mathcal{#1}(n)$ par récurrence sur tout $n \in #2$.\\
+    \textit{Cas de base.} #4\\
+    \textit{Cas héréditaire.} Supposons $\mathcal{#1}(n)$ pour un certain $n \in #2$. #5
+}
+\newcommand{\induction}[3]{
+    \textit{Cas de base.} #2\\
+    \textit{Cas héréditaire.} Supposons la propriété vraie pour un certain $n \in #1$. #3
+}
+\newcommand{\restrict}[2]{#1_{|_{#2}}}
+\newcommand{\extend}[1][\cdot]{\langle #1 \rangle}
+\newcommand{\coextend}[1][\cdot]{\extend[#1]_+}
+\newcommand{\rcoextend}[1][\cdot]{\coextend[#1]^{-1}}
+\newcommand{\function}[5]{
+    \begin{tabular}{r c c c}
+         $#1 :$ & $#2$ & $\rightarrow$ & $#3$ \\
+                & $#4$ &   $\mapsto$   & $#5$
+    \end{tabular}
+}
+\newcommand{\indicator}{\mathbb{1}}
+
+\renewcommand*\contentsname{Table des matières}
+\renewcommand{\abstractname}{Résumé}
+\renewcommand{\proofname}{Démonstration}
+\renewcommand{\labelenumi}{(\roman{enumi})}
+
+\setlength{\parskip}{10pt}
+\setmathfont{NewCMMath-Book}
+
+\title{Étude des réseaux de Petri continus\\et extensions structurelles}
+\author{Arthur Barbera}
+\date{Mai 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    Dans ce document, nous nous intéressons premièrement aux réseaux de Petri discrets classiques. Ce modèle de calcul est utilisé dans divers secteurs de l'informatique : programmation concurrentielle, automatisme, etc. Nous allons définir formellement les concepts clés, énoncer des lemmes et propriétés s'y rattachant puis voir certains résultats aux problèmes les plus importants. Ce type de réseau a vu son expressivité être augmentée via des extensions au niveau des arcs. En effet, certains d'entre eux augmentent l'expressivité du réseau, au détriment de la décidabilité de certains problèmes courants. Enfin, nous nous pencherons sur la dérivée continue des réseaux de Petri servant à approximer le comportement de leurs pairs classiques discrets.
+    
+    Il est donc pertinent de se demander si l'on peut approximer les réseaux discrets étendus via des séquences de tirs continus. L'objectif de ce document est ainsi de recenser l'ensemble des résultats obtenus via la résolution de problèmes habituels des réseaux de Petri dans la variante continue combinée aux extensions d'arcs.
+\end{abstract}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Réseaux de Petri}
+
+\subsection{Réseaux discrets}
+
+Dans cette section, nous allons établir formellement les définitions liées aux réseaux de Petri discrets classiques. Celles-ci, basées sur celles de \cite{delfieu:hal-05069404}, nous permettent de construire des premiers lemmes et propriétés qui seront l'essence même de problèmes dont seuls certains algorithmes sont décidables. En particulier, nous étudions comment assurer algébriquement la $k$-bornitude d'un réseau de Petri donné, ce qui nous permet d'en déduire un algorithme décidable.
+
+\subsubsection{Définitions}
+
+\begin{definition}
+    Un réseau de Petri est un triplet $\mathcal{N} = (P, T, F)$ où :
+    \begin{itemize}
+        \item $P$ est un ensemble fini de places.
+        \item $T$ est un ensemble fini de transitions (tel que $P \cap T = \emptyset$).
+        \item $F : (P \times T) \cup (T \times P) \rightarrow \mathbb{N}$ est la relation de flots. Pour $F(x, y) = 0$, l'arc n'existe pas.
+    \end{itemize}
+    On pose également les ensembles $Pre, Post$ définis par, $\forall (p, t) \in P \times T$ :
+    \begin{itemize}
+        \item $Pre(p, t) = F(p, t)$ les préconditions du tir $t$ sur la place $p$ ; on pose de plus $F(., t) = \preb{t}$ le vecteur de préconditions de $t$ sur l'ensemble $P$.
+        \item $Post(p, t) = F(t, p)$ les postconditions du tir $t$ sur la place $p$ ; on pose de plus $F(t, .) = \postb{t}$ le vecteur de postconditions de $t$ sur l'ensemble $P$.
+    \end{itemize}
+    Enfin, on peut calculer la matrice d'incidence $C \in M_{P, T}(\mathbb{Z})$ de $\mathcal{N}$ où :
+    \[\forall p \in P,\ \forall t \in T,\ C(p, t) = Post(p, t) - Pre(p, t).\]
+\end{definition}
+
+Les places d'un réseau peuvent alors être perçues comme des conteneurs de jetons. On définit donc la notion de marquage, qui permet de rendre compte du nombre de jetons stockés par place dans un vecteur de taille appropriée et naturellement indexé par lesdites places.
+
+\begin{definition}
+    Soit $P'$ un ensemble de places. Un marquage est un vecteur $m := (p_0, ..., p_n) \in \mathbb{N}^{P'}$ indexé par les places de $P'$. Ainsi, un réseau de Petri marqué est un quadruplet $\mathcal{N} := (P, T, F, m_0)$ tel que $(P, T, F)$ est un réseau de Petri et $m_0 \in \mathbb{N}^{P}$ est le marquage initial. On introduit enfin un ordre partiel $\succeq\ \subseteq \mathbb{N}^P \times \mathbb{N}^P$, de sorte que $m \succeq m' \Longleftrightarrow \forall p \in P,\ m(p) \geq m(p)$.
+\end{definition}
+
+Nous allons maintenant nous pencher sur les premiers problèmes algorithmiques, que nous définissons comme suit.
+Dans les paragraphes suivants, on considère le réseau de Petri marqué $\mathcal{N} := (P, T, F, m_0)$.
+
+\begin{definition}
+    On dit qu'une transition $t \in T$ est sensibilisée (ou franchissable) si, pour toute place $p \in P,\ m(p) \geq F(p, t)$. En ce cas, on atteint un nouveau marquage $m'$ ; on note $m \reaches[t] m'$ cette propriété. Plus généralement, on pose $\sigma := t_1t_2...t_k \in T^k$ une séquence tirs à $k \in \mathbb{N}^*$ transitions. Si $m_0 \reaches[t_1] m_1,\ m_1 \reaches[t_2] m_2,\ ...,\ m_{k-1} \xrightarrow{t_k} m_k$, on dit que $m_k$ est accessible par $\sigma$ depuis $m_0$ et l'on note $m_0 \xrightarrow{\sigma} m_k$ cette relation. On pose de plus \[\reach[n]{N}{m_0} := \{m \in \mathbb{N}^P \mid \exists \sigma \in T^n,\ m_0 \xrightarrow{\sigma} m\}\] l'ensemble des marquages accessibles depuis $m_0$ en $n \in \mathbb{N}$ transitions. On omet cet exposant si l'on considère les marquages $m$ accessibles depuis $m_0$ indistinctement du nombre de transitions nécessaires pour y parvenir, auquel cas on note $m_0 \rightarrow^* m$ cette relation.
+\end{definition}
+
+\begin{definition}
+    Soit $u \in \mathbb{A}^I$ un vecteur d'éléments de $\mathbb{A}$ indexé par $I$. On note $[\![u]\!]$ le support de $u$, défini par \[[\![u]\!] := \{x \in I \mid u(x) > 0\}.\]
+\end{definition}
+
+La construction de $\reach{N}{m_0}$ constitue un premier problème algorithmique important. On s'intéresse donc à une certaine variété de réseaux de Petri qui peuvent influencer la forme que prendra cet ensemble de marquages.
+
+La première question est de savoir si cet ensemble est fini pour tout réseau $\mathcal{N}$. Pour ce faire, on définit naturellement la notion de $k$-borne afin de définir une borne supérieure sur le nombre de jetons dans toute place au sein du réseau.
+
+\begin{definition}[$k$-borne]
+    Soit $k \in \mathbb{N}$.
+    Une place $p \in P$ est $k$-bornée si, pour tout marquage $m \in \reach{N}{m_0}$, $m(p) \leq k$.
+    Ainsi, $\mathcal{N}$ est $k$-borné si toute place $p \in P$ est $k$-bornée.
+\end{definition}
+
+On peut également se demander s'il existe un point de départ commun à tout marquage de $\reach{N}{m_0}$, c'est-à-dire s'il existe une séquence de transitions qui permet de passer de tout marquage $m$ au marquage initial $m_0$.
+
+\begin{definition}[Réinitialisabilité]
+    $\mathcal{N}$ est réinitialisable  si, pour tout marquage accessible $m \in \reach{N}{m_0}$, $m \reachess m_0$.
+\end{definition}
+
+Enfin, certaines transitions du réseau peuvent ne sont jamais sensibilisées et ne sont ainsi pas nécessaires à ce dernier. On définit donc la notion de (quasi-)vivacité.
+
+\begin{definition}[Vivacité]
+    Une transition $t \in T$ est quasi-vivante s'il existe $m_1, m_2 \in \reach{N}{m_0}$ tels que $m_1 \xrightarrow{t} m_2$.
+    De plus, $t$ est vivante si, pour tout marquage accessible $m \in \reach{N}{m_0}$, il existe une paire de marquages $m_1, m_2 \in \mathbb{N}^P$ tels que $m \reachess m_1$ et $m_1 \reaches[t] m_2$.
+\end{definition}
+
+Maintenant que le modèle de calcul est défini, nous allons nous intéresser aux premières propriétés qui en découlent afin de catégoriser certains problèmes algorithmiques. Nous prouverons en particulier la décidabilité de l'un des algorithmes existants en s'appuyant sur un ensemble de lemmes également démontrés ou démontrables.
+
+\subsubsection{Problème de l'existence d'une k-borne}
+
+Il existe plusieurs manières de déterminer la $k$-bornitude d'un réseau marqué. La première méthode consiste en une analyse du réseau par un graphe d'accessibilité. On cherche donc à construire un algorithme qui explore l'ensemble des marquages possibles, de sorte que l'on soit capable de déterminer la présence (ou l'absence) d'un marquage donné.
+
+On peut alors imaginer l'algorithme \verb|build_reachable_graph| rédigé ci-dessous en Python d'une complexité en $\mathcal{O}(|P|.|T|.|M|)$. Ce dernier se base sur un réseau de Petri marqué $(\mathcal{N}, m_0)$ dont les variables représentatives sont respectivement \verb|N| et \verb|m_init|.
+
+\begin{minted}{python}
+def build_reachable_graph(N, m_init):
+    # Graphe d'accessibilité avec m_init à la racine.
+    reachable_graph = Graph(m_init)
+    explorable = [m_init]
+
+    while explorable != []:
+        m = explorable.pop()
+
+        for t in N.T:
+            pre = N.Pre(t)
+            post = N.Post(t)
+            
+            if m >= pre:
+                m_next = m + post - pre
+
+                # Recherche d'un marquage pré-existant dans le graphe
+                # d'accessibilité inférieur à m_next.
+                m_existing = reachable_graph.find_if(lambda other: m_next > other)
+
+                if m_existing != None
+                        and reachable_graph.exists_path(m_existing, m_next):
+                    return None # Le réseau n'est pas k-borné.
+                elif not reachable_graph.contains(m_next):
+                    explorable.append(m_next)
+
+                new_edge = (m, t, m_next)
+
+                if new_edge not in reachable_graph:
+                    reachable_graph.add_edge(new_edge)
+
+    return reachable_graph
+\end{minted}
+
+Afin de prouver la décidabilité d'un tel algorithme, nous nous basons sur les lemmes suivants (provenants de \cite{delfieu:hal-05069404}) :
+
+\begin{lemma}[Monotonie]
+    Soit $t \in T$ une transition sensibilisée dans un marquage $m$. Alors pour tout marquage $m' \geq m$, $t$ est sensibilisée dans $m'$.
+\end{lemma}
+
+\begin{lemma}[Karp et Miller]
+    Toute suite infinie de vecteurs $(v_1, ..., v_n, ...)$ admet au moins deux indices $i < j$ tels que $v_i \geq v_j$.
+\end{lemma}
+
+Dès lors, on observe deux cas possibles qui prouvent la terminaison de l'algorithme :
+
+\begin{itemize}
+    \item Soit l'on rencontre une infinité de marquages parmi lesquels on aura forcément $m_i \geq m_j$ avec $i < j$ par Karp et Miller, d'où l'algorithme s'arrête car le réseau n'est pas $k$-borné ;
+    \item Soit l'on finit par rencontrer un marquage pré-existant dans le graphe d'accessibilité auquel cas on n'ajoute pas de nouvelle arête à ce dernier et le tour de boucle se termine.
+\end{itemize}
+
+Si l'algorithme termine en renvoyant \verb|None|, alors le graphe n'est pas borné. Sinon, il l'est, et on a alors énuméré de manière exhaustive l'ensemble des marquages accessibles $\reach{N}{m_0}$. Afin d'avoir une analyse plus poussée du réseau, nous pouvons alors employer une méthode purement algébrique en s'appuyant sur l'équation caractéristique permettant de passer d'un marquage à l'autre via la matrice d'incidence $C$ de $\mathcal{N}$.
+
+\begin{definition}[Équation caractéristique]
+    Soit $s$ une séquence de transitions telle que $m \reaches[s] m'$. Posons $\overline{s} \in \mathbb{N}^{T}$ le vecteur dont les composantes correspondent au nombre de tirs de chaque transition. On a l'équation caractéristique \[m' = m + C\overline{s}.\]
+\end{definition}
+
+Celle-ci nous permet de calculer les composantes conservatives du réseau.
+
+\begin{definition}
+    Un vecteur $f \in \mathbb{N}^P$ est une composante conservative de $\mathcal{N}$ s'il existe un marquage accessible $m \in \reach{N}{m_0}$ tel que $f^t \cdot m = f^t \cdot m_0$.
+\end{definition}
+
+\begin{remark}
+    Trouver une telle dépendance est équivalente à déterminer le noyau $Ker(C^t)$ de $C^t$. En effet, cette définition est directement déduite de l'équation caractéristique entre $m_0$ et $m$ : \[\begin{tabular}{r l l}
+                          & $m = m_0 + C\overline{s}$ & $\Longleftrightarrow f^t.m = f^t.m_0 + f^tC\overline{s}$ \\
+        $\Longrightarrow$ & $f^tC = 0$                & $\Longleftrightarrow C^tf = 0$.
+    \end{tabular}\]
+\end{remark}
+
+Cette dernière définition nous permet immédiatement d'en déduire une dépendance linéaire sur un sous-ensemble de places $P' \subseteq P$ qui garantit ainsi que, indifféremment de la séquence de tirs choisie, un nombre constant de jetons est traité dans $P'$. On peut donc construire une couverture de composantes conservatives sur l'ensemble du réseau. Son existence est une condition suffisante pour conclure sur une $k$-borne de $\mathcal{N}$ :
+
+\begin{property}
+    S'il existe $\mathcal{F} = \{f_1, ..., f_n\}$ une base de composantes conservatives de $\mathcal{N}$ telle que $\bigcup_{i = 1}^n [\![f_i]\!] = P$, alors $\mathcal{N}$ est $k$-bornée.
+\end{property}
+
+\begin{proof}
+    \textbf{À rédiger.} (Condition nécessaire ET suffisante ?)
+\end{proof}
+
+La résolution du système $C^tf = 0$ entraîne l'apparition d'une base de composantes conservatives de $\mathcal{N}$. Si cette dernière vérifie la propriété précédente, on en déduit que la $k$-bornitude peut être solvable en une complexité équivalente à celle de Gauss, rendant le problème décidable en un temps polynomial $\mathcal{O}(n^3)$.
+
+\subsubsection{Extensions d'arcs}
+
+Les réseaux de Petri ainsi construits ont un ensemble de propriétés intéressantes permettant de visualiser un système concurrentiel, des rendez-vous, etc. Cependant, leur expressivité est ainsi trop limitée pour des problèmes complexes. Cette dernière peut être améliorée grâce à des extensions fonctionnelles au niveau du fonctionnement des arcs, au détriment de la décidabilité de certaines propriétés des réseaux de Petri classiques. Dans la suite des paragraphes, à l'instar de \cite{dufourd}, on étend l'ensemble d'arrivée de la relation de flots $F$ à $\mathbb{N}[P]$.
+
+\begin{definition}
+    Un réseau de Petri est à arcs inhibiteurs s'il existe $(p, t) \in P \times T$ un arc tel que $F(p, t) = kp$, $k \in \mathbb{N}^*$.
+\end{definition}
+
+\begin{remark}
+    L'arc $(p, t)$ est un test à 0 ; on a $m(p) \geq F(p, t) = kp \Longleftrightarrow p = 0$.
+\end{remark}
+
+\begin{definition}
+    Un réseau de Petri est à arcs de transfert s'il existe $(p, t) \in P \times T$ un arc et $p'\in P$ tels que $F(p, t) = p$ et $F(t, p') = p$.
+\end{definition}
+
+\begin{definition}
+    Un réseau de Petri est à arcs de reset s'il existe $(p, t) \in P \times T$ un arc tel que $F(p, t) = p$ et $F(t, p) = 0$.
+\end{definition}
+
+Il existe également une dernière extension des réseaux de Petri qui n'augmente pas son expressivité et ne change ainsi en rien le caractère (in)décidable de chacune de ses propriétés.
+
+\begin{definition}
+    Un réseau de Petri est à arcs de lecture si $\mathcal{N} = (P, T, F, L, m_0)$ où $(P, T, F, m_0)$ est un réseau de Petri classique et $L : P \times T \rightarrow \mathbb{N}$ est la fonction de lecture qui à tout arc $(p, t) \in P \times T$ où $t$ est une transition de lecture associe le nombre de jetons de $p$.
+\end{definition}
+
+\subsubsection{Turing-complétude des réseaux étendus}
+
+Comme nous le savons, il est impossible de déterminer l'arrêt d'une machine de Turing. Cette propriété est fondamentale pour les paragraphes qui suivent. En effet, il existe un autre type d'automate nommé les machines de Minsky (cf. \cite{sapir}) dont le pouvoir expressif est équivalent à celui des machines de Turing.
+
+\begin{definition}
+    Une machine de Minsky est un quintuplet $\mathcal{M} := (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$, où $Q_{\mathcal{M}}$ est l'ensemble d'états, $T_{\mathcal{M}}$ est l'ensemble des transitions, $c_1, c_2 \in \mathbb{N}$ des compteurs, $\rho_0$ est la configuration initiale. De plus, les configurations de $\mathcal{M}$ ont la forme $(q, i, j) \in Q_{\mathcal{M}} \times \mathbb{N}^2$.
+\end{definition}
+
+\begin{definition}
+    Soit $\mathcal{M}$ une machine de Minsky. On définit de manière équivalente l'ensemble des configurations accessibles de $\mathcal{M}$ depuis $\rho_0$ en $n \in \mathbb{N}$ transitions labellisées par l'ensemble \[\reach[n]{M}{\rho_0} := \{\rho \in C_{\mathcal{M}} \mid \exists \sigma \in T_{\mathcal{M}}^n,\ \rho_0 \xrightarrow{\sigma} \rho\}\]
+\end{definition}
+
+\begin{theorem}
+    Les machines de Minsky sont Turing-complètes.
+\end{theorem}
+
+\begin{proof}[Démonstration (schéma)]
+    \textbf{À rédiger.} On commencera par simuler une machine de Turing en s'appuyant sur une machine de Minsky avec 4 compteurs qui simulent 2 piles. Puis, on encodera ces derniers dans 2 compteurs à l'aide de produits de nombres premiers dans l'un, où la multiplicité algébrique de chaque nombre représente la valeur du compteur associé. On peut alors multiplier par l'un des nombres pour augmenter son compteur, et faire un test à 0 en vérifiant le critère de divisibilité (succession de soustractions).
+\end{proof}
+
+Comme annoncé, ces nouveaux arcs augmentent fortement l'expressivité des réseaux de Petri. En réalité, il est possible de simuler le fonctionnement d'une machine de Minsky depuis un réseau de Petri à arcs inhibiteurs qui permettent le test à 0. Cette fonctionnalité est inexistante de manière déterministe dans les réseaux de Petri classiques. En effet, sur une place $p \in P$, on pourrait par exemple réduire cette vérification à un test à 1 sur un arc $(p, t)$, puis un test à 2 sur un autre arc $(p, t')$ pour le cas "sinon". Or, si $m(p) \geq 2$, alors les deux transitions $t$ et $t'$ sont sensibilisées, ce qui entraîne que l'on peut toujours tirer $t$, c'est-à-dire que le test à 1 est valide. L'arc inhibiteur contraint donc le test à 0 de manière déterministe, élevant alors un tel réseau de Petri au même niveau que les machines de Minsky.
+
+\begin{corollary}
+    Les réseaux de Petri à arcs inhibiteurs sont Turing-complets.
+\end{corollary}
+
+\begin{proof}[Démonstration (schéma)]
+    \textbf{À rédiger.} Tout compteur et tout état de la machine de Minsky devient une place dans le réseau de Petri étendu. Pour changer d'états, on réutilise les transitions de Minsky où les tests à 0 sont donc traduits par des arcs inhibiteurs provenant de la place représentant le compteur à tester. Enfin, on a un unique jeton qui représente l'état actuel pendant l'exécution de la machine.
+\end{proof}
+
+Dès lors, de nombreuses de leurs propriétés passent de décidable à indécidable. Nous nous penchons en particulier sur l'accessibilité qui se trouve être décidable avec une complexité d'Ackermann (fonction prenant la forme d'une tour d'exponentielles) dans les réseaux classiques, tandis qu'elle devient indécidable dans les réseaux étendus. L'accessibilité d'un marquage dans un réseau de Petri étendu donné est donc équivalente à déterminer l'acceptation d'une configuration par une machine de Turing et, par extension, son arrêt.
+
+\begin{corollary}
+    Le problème d'accessibilité dans les réseaux de Petri à arcs inhibiteurs est indécidable.
+\end{corollary}
+
+Le lien avec l'accessibilité pour les arcs restants (reset et transfert) est plus subtile. On peut en fait s'appuyer sur le résultat précédent. À partir d'un réseau $\mathcal{N}$ à arcs inhibiteurs, \cite{dufourd} construit un réseau $\mathcal{N}^+$ à arcs de reset de la façon suivante : on part du même réseau $\mathcal{N}$ mais, pour toute place $p \in P$ telle qu'il existe un arc inhibiteur $(p, t) \in P \times T$ (c'est-à-dire que $p$ est une place \textit{inhibitrice}), alors $p$ possède alors une place jumelle $p'$ telle que l'arc $(t, p')$ est un arc de reset et on redéfinit $F(p, t) := 0$. De cette façon, en posant $m^+(p') := m(p)$, on a le lemme suivant :
+
+\begin{lemma}
+    Soit $p$ une place inhibitrice dans $\mathcal{N}$, $p'$ sa place jumelle dans $\mathcal{N}^+$. Alors \[\forall m \in \reach{N}{m_0},\ m_0 \rightarrow m \Longleftrightarrow m_0 \rightarrow m^+.\]
+\end{lemma}
+
+\begin{proof}
+    \textbf{À rédiger.} Cette preuve est une induction simple qui s'appuie sur la longueur d'une séquence de tirs $\sigma$ quelconque.
+\end{proof}
+
+Ce lemme est donc fondateur du théorème qui suit, puisqu'il permet d'assurer que le fonctionnement entre $\mathcal{N}$ et $\mathcal{N}^+$ est le même jusqu'à ce qu'un tir de reset soit effectué dans ce dernier, ce qui crée d'ailleurs un déséquilibre permanent entre deux places jumelles $p$ et $p'$. Ainsi :
+
+\begin{theorem}[\text{\autocite[Theorem 11]{dufourd}}]
+    L'accessibilité est indécidable pour les graphes de reset et de transfert ayant 2 arcs étendus.
+\end{theorem}
+
+En effet, une construction similaire pour les arcs de transfert peut être réalisée, ce qui nous permet de conclure sur l'indécidabilité de l'accessibilité dans les réseaux utilisant ce type d'arcs.
+
+\newpage
+
+\subsection{Réseaux continus}
+
+La variante continue des réseaux de Petri offre de nouvelles sémantiques de fonctionnement. Dans ce modèle, les transitions peuvent être tirées un nombre rationnel de fois, ce qui implique que les places peuvent contenir des fractions de jetons. Cette continuité permet d'approximer les réseaux discrets, et certains résultats de décidabilité et/ou de complexité aux problèmes précédemment rencontrés sont encore différents.
+
+À l'instar des réseaux discrets, nous commencerons par énoncer un ensemble de définitions qui nous permettront de cerner ce modèle de calcul différent, bien que similaire. Ensuite, nous nous pencherons à nouveau sur le problème d'accessibilité dans les réseaux continus (notamment en s'appuyant sur les résultats de \cite{tocl}), puis nous leur adapterons les extensions précédemment découvertes. Nous chercherons ainsi à conclure sur le caractère (in)décidable dans ces dernières variantes.
+
+Dans les paragraphes suivants, on pose $\mathcal{N}$ un réseau de Petri continu défini par $\mathcal{N} := (P, T, F, m_0)$. En particulier, tout marquage $m$ de ce dernier est un vecteur de nombre rationnels positifs indexé par les places du réseau : $m \in \mathbb{Q}_+^P$.
+
+\subsubsection{Définitions}
+
+\begin{definition}
+    Une transition $t \in T$ est sensibilisée au marquage $m \in \mathbb{Q}_+^P$ s'il existe $l_t \in \mathbb{Q_+^*}$ tel que
+    \[l_t = \begin{cases}
+        min \{\frac{m(p)}{F(p, t)} : p \in \preb{t}\} & \text{si } \preb{t} \neq \emptyset, \\
+        +\infty & \text{sinon.}
+    \end{cases}\]
+    En ce cas, on peut accéder à un marquage $m' \in \mathbb{Q}_+^P$ en tirant $t$ par un facteur $0 < \alpha \leq l_t$ (que l'on note $m \creaches[\alpha t] m'$) et l'on retrouve l'équation caractéristique qui s'appuie sur la matrice d'incidence $C$ : \[m' = m + \alpha Ct\]
+\end{definition}
+
+\begin{definition}
+    On définit l'ensemble des marquages accessibles continus $\creach[n]{N}{m_0}$ en $n \in \mathbb{N}$ transitions par \[\creach[n]{N}{m_0} := \{m \in \mathbb{Q}_+^P \mid \exists \sigma \in T^n,\  m_0 \xrightarrow{\sigma}_{\mathbb{Q}} m\}.\]
+    On omet l'exposant $n$ si l’on considère les marquages $m$ accessibles depuis $m_0$ indistinctement du nombre de transitions nécessaires pour y parvenir, auquel cas on note $m_0 \creachess m$ cette relation.
+\end{definition}
+
+\begin{remark}
+    Comme $\mathbb{N} \subseteq \mathbb{Q}$, on a $\reach{N}{m_0} \subseteq \mathbb{Q}\reach{N}{m_0}$.
+\end{remark}
+
+\noindent
+Le reste des définitions utilisées dans le cas discret s'applique naturellement au cas continu.
+
+\subsubsection{Problème d'accessibilité continue}
+
+Là où le problème d'accessibilité dans les réseaux de Petri discrets est décidable avec une complexité d'Ackermann, la variante continue conserve non seulement cet aspect, mais de surcroît en améliorant la complexité algorithmique.
+
+\begin{theorem}[\text{\autocite[Proposition 27]{fracahaddad}}]
+    Le problème d'accessibilité pour les réseaux de Petri continus est décidable en temps polynomial.
+\end{theorem}
+
+Notre objectif est donc de déterminer la décidabilité d'un tel problème dans les réseaux de Petri continus avec des extensions qui augmentent leur expressivité.
+
+\subsubsection{Adaptation continue des arcs inhibiteurs}
+
+Dans les réseaux de Petri discrets étendus par des arcs inhibiteurs, de transfert ou de reset, nous avons observé que le problème d'accessibilité devenait indécidable. Or, en passant des réseaux classiques aux réseaux continus, le problème d'accessibilité a vu sa complexité être grandement réduite. On peut donc se demander si la forme continue des extensions pourrait nous permettre ou non de décider ce dernier.
+
+Nous nous inspirons de \cite{almagor_et_al} qui ont eu l'idée fondatrice dans les ($\mathbb{Q}$)VASS ((\textit{Continuous}) \textit{Vector Addition System with States}). En effet, pour $\mathcal{V}$ un $\mathbb{Q}$VASS donné, ils créent un nouveau $\mathbb{Q}$VASS $\mathcal{V}'$ dans lequel, pour toute paire d'états $(p, q)$ de $\mathcal{V}$ telle qu'il existe une transition labellisée de $p$ à $q$, on crée une paire d'états intermédiaires $(r_p, r_q)$ qui nous permet de garantir que les compteurs, après la transition de $p$ à $q$, ne puissent avoir subi qu'une affectation discrète.
+
+Nous allons adapter cette construction à nos réseaux de Petri continus afin de simuler des machines de Minsky. En effet, on souhaite construire un réseau continu $\overline{\mathcal{N}}$ à arcs inhibiteurs tel que tout passage de $p$ à $q$ dans $\mathcal{N}$ se fasse de manière discrète. De cette façon, on réduira le problème d'accessibilité de la variante continue étendue au problème de l'arrêt d'une machine de Minsky, dont l'exécution est séquentielle.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/minsky-machine.png}
+    \caption{Machine de Minsky avec test à 0.}
+    \label{fig:minsky-machine}
+\end{figure}
+
+Pour simuler l'exécution d'une machine de Minsky $\mathcal{M} = (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$, on pose $P := Q_{\mathcal{M}} \cup \{c_1, c_2\}$ et $T := T_{\mathcal{M}}$. Ensuite, on définit $F$ de la manière suivante ; pour toute transition $t \in T_{\mathcal{M}}$ de $s$ à $s'$ : \begin{itemize}
+    \item Si $t$ est un test à 0 sur $c_i$, alors $F(s, t) = F(t, s') = 1$ et $F(c_i, t) = 2c_i$.
+    \item Si $t$ est une décrémentation de $c_i$ après test de positivité stricte, alors $F(s, t) = F(t, s') = F(c_i, t) = 1$.
+    \item Si $t$ est une incrémentation, alors $F(s, t) = F(t, s') = F(t, c_i) = 1$.
+\end{itemize}
+On encode ensuite toute configuration $(q_k, i, j)$ de $\mathcal{M}$ dans un marquage $m \in \mathbb{Q}_+^{P}$ tel que : \begin{itemize}
+    \item $m(q_k) = 1$ et $\forall l \neq k,\ m(q_l) = 0$.
+    \item $m(c_i) = c_i$ (la valeur du compteur).
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{img/minsky-net.png}
+    \caption{Machine de Minsky implémentée en un réseau de Petri.}
+    \label{fig:minsky-net}
+\end{figure}
+
+Cette construction pourrait fonctionner dans les réseaux discrets, comme on peut le voir dans la machine de Minsky (figure \ref{fig:minsky-machine}) implémentée dans un réseau de Petri (figure \ref{fig:minsky-net}). Or, notre réseau étant continu, nous devons l'améliorer afin d'assurer une exécution discrète.
+
+Posons donc $\overline{\mathcal{N}} := (\overline{P}, \overline{T}, \overline{F}, \overline{m_0})$ le réseau de Petri continu qui simule des tirs discrets. L'idée est la suivante :
+on segmente chaque transition du réseau originel en un "sous-réseau" dans le réseau continu qui va forcer l'utilisation de tirs discrets. Basons-nous sur le réseau de la figure \ref{fig:petri-net}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\linewidth]{img/petri-net.png}
+    \caption{Réseau de Petri discret.}
+    \label{fig:petri-net}
+\end{figure}
+
+Chaque sous-réseau de $\overline{\mathcal{N}}$ se base sur deux triplets $(q, ref(q), ref), (\overline{q}, \overline{ref}(\overline{q}), \overline{ref}) \in \overline{P} \times \overline{T} \times \overline{P}$ où $q, \overline{q}$ sont des places primordiales qui vont s'échanger un unique jeton à chaque tir d'une transition de $\overline{T}$ et ainsi garantir la discrétisation des marquages à l'aide de tests à 0.
+
+Plus précisément, cet échange s'effectue en deux temps via $ref, \overline{ref}$ qui réceptionnent puis leur transfèrent leur contenu via les transitions $ref(q), \overline{ref}(\overline{q})$. Le choix de la place porteuse initiale du jeton entre $q$ et $\overline{q}$ est entièrement arbitraire. Supposons donc que $q$ a été choisie.
+
+Pour chaque transition $t \in T$, on crée un triplet $(t^-, r_t, t^+) \in \overline{T} \times \overline{P} \times \overline{T}$ intermédiaire entre les places $\preb{t}$ et $\postb{t}$, et dont le fonctionnement repose sur l'utilisation du jeton dans $q$ et de son transfert progressif dans $\overline{q}$. En effet, un tir $\alpha \in \mathbb{Q} \setminus \mathbb{N}$ de $t^-$ agit sur l'ensemble des jetons dans les places de $\preb{t}$, mais aussi et surtout dans $q$ qui est contraint de transférer $\alpha$ jeton dans $\overline{q}$ via $t^-$ ; on en a tout autant dans $r_t$, la place intermédiaire entre $t^-$ et $t^+$. Ainsi, $t^+$ est bloquée par un arc inhibiteur $(q, t^+)$ qui empêche de poursuivre les tirs tant que $q$ n'est pas entièrement vidée : ceci laisse donc place à un marquage discret dans lequel on a un jeton dans $ref$.
+
+Posons alors $\overline{\mathcal{N}} := (\overline{P}, \overline{T}, \overline{F}, \overline{m_0})$, avec les composantes définies comme suit :
+\begin{itemize}
+    \item $\overline{P} = P \cup \{q, \overline{q}\} \cup \{r_t, \overline{r_t} : t \in T\} \cup \{ref, \overline{ref}\}$,
+    \item $\overline{T} := \{ref(q), \overline{ref}(\overline{q})\} \cup \bigcup_{{t\in T}} \{t^-, t^+, \overline{t^-}, \overline{t^+}\}$
+    \item 
+\end{itemize}
+
+initialement $\overline{P} := P \cup \{q, \overline{q}\} \cup \{r_t, \overline{r_t} : t \in T\}$, $\overline{T} := \bigcup_{t \in T} \{t^-, t^+, \overline{t^-}, \overline{t^+}\}$. Les places $q$, $\overline{q}$ s'échangent successivement un unique jeton de sorte que toute transition de $\overline{T}$ soit tirée de manière discrète ; les places intermédiaires $r_t, \overline{r_t}$ auront pour rôle d'assurer qu'à chaque tir impliquant $q$ ou $\overline{q}$, l'échange de jeton se fait entièrement d'une place à l'autre ; enfin, les transitions $t^-, t^+, \overline{t^-}, \overline{t^+}$ articulent chacun de ces déplacements de jetons. On définit leur comportement via la relation de flots $\overline{F}$ : \begin{itemize}
+    \item $\forall p \in \preb{t},\ \overline{F}(p, t^-) = \overline{F}(p, \overline{t^-}) = \overline{F}(p, t)$.
+    \item $\forall p \in \postb{t},\ \overline{F}(t^+, p) = \overline{F}(\overline{t^+}, p) = \overline{F}(t, p)$.
+    \item $\overline{F}(t^-, r_t) = \overline{F}(r_t, t^+) = \overline{F}(\overline{t^-}, \overline{r_t}) = \overline{F}(\overline{r_t}, \overline{t^+}) = 1$.
+    \item $\overline{F}(q, t^-) = \overline{F}(\overline{q}, \overline{t^-}) = 1$.
+    \item $\overline{F}(\overline{t^-}, q) = \overline{F}(t^-, \overline{q}) = 1$.
+    \item $\overline{F}(q, t^+) = 2q, \overline{F}(\overline{q}, \overline{t^+}) = 2\overline{q}$.
+\end{itemize}
+Enfin, on définit $\overline{m_0}(p) := m_0(p)$ pour toute transition $p \in P$, et $(\overline{m_0}(q), \overline{m_0}(\overline{q})) \in \{(1, 0), (0, 1)\}$ ainsi que $\overline{m}(r_t) = 0$ pour tout $t \in T$.
+
+\begin{definition}
+    Soit $t \in  T$ une transition. On dit que l'algorithme précédent discrétise $t$ dans $\overline{\mathcal{N}}$. De plus, si toute transition de $\mathcal{N}$ est discrétisée dans $\overline{\mathcal{N}}$, alors $\overline{\mathcal{N}}$ est la discrétisation de $\mathcal{N}$.
+\end{definition}
+
+Le réseau de Petri de la figure \ref{fig:petri-net} est alors implémenté dans le réseau de Petri continu discrétisé de la figure \ref{fig:continuous-petri-net}. Le choix de définir $\overline{m_0}(q) = 1$ et $\overline{m_0}(\overline{q}) = 0$ a été fait arbitrairement ; inverser les valeurs aurait été équivalent.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{img/continuous-petri-net.png}
+    \caption{Réseau de Petri continu discrétisé de la figure \ref{fig:petri-net}.}
+    \label{fig:continuous-petri-net}
+\end{figure}
+
+\begin{definition}
+    On définit l'application \[
+        \function{\Phi}{C_{\mathcal{M}}}{\mathbb{N}^{\overline{P}}}{(q_k, i, j)}{(0, ..., 0, \underbrace{1}_{q_k}, 0, ..., 0, \overbrace{i}^{c_1}, \overbrace{j}^{c_2}, \underbrace{n_q}_q, \underbrace{n_{\overline{q}}}_{\overline{q}})}
+    \]
+    qui envoie toute configuration $(q, i, j)$ d'une machine de Minsky $\mathcal{M}$ vers un marquage équivalent $m$ du réseau de Petri associé $\overline{\mathcal{N}}$.
+\end{definition}
+
+
+\begin{lemma}
+    Si on atteint un marquage $m$ tel que $m(q)>0$ et $m({\overline q})>0$, alors
+    pour tout marquage $m'$ tel que $m\rightarrow m'$, on a $m'(q)>0$ et $m'({\overline q})>0$.
+\end{lemma}
+
+\begin{proof}
+    A cause des arcs inhibiteurs, aucune transition pouvant faire diminuer
+    $m(q)$ ou $m({\overline q})$ ne peut être activée.
+\end{proof}
+\newcommand{\Good}{\mathsf{Good}}
+\newcommand{\Runs}{\mathsf{Runs}}
+
+\fbox{Donner un nom aux marquages discrets correspondants à des configurations de la machine de Minsky : $\Good$}
+
+\fbox{Définir une application des runs de $\cal M$ dans les runs de $\cal N$: $\Phi$}
+
+
+\begin{lemma}
+Pour tous marquages $m,m'\in \Good$, s'il existe une exécution $\rho$
+telle que $m \xrightarrow{\rho} m'$, alors il existe une exécution $\rho' \in \Phi(\Runs({\cal M}))$ dont tous les tirs sont entiers
+telle que $m \xrightarrow{\rho'} m'$.
+\end{lemma}
+
+\begin{proof}
+Soient $m,m'\in \Good$ et $\rho$ tels que    $m \xrightarrow{\rho} m'$. Sans perte de généralité, on suppose $m(q)=1$ et $m({\overline q})=0$.
+Comme $m\in \Good$,
+la première transition de $\rho$ est du type $first_q(t_1)$ avec $t_1\in T$.
+
+\begin{itemize}
+    \item Montrer que le tir de $first_q(t_1)$ doit être complet : sinon ensuite seule $tr_{\overline q}$
+    est possible, et mène à une configuration bloquante (lemme précédent).
+    \item Ensuite seule $tr_{\overline q}$ est possible, et doit être franchie aussi complètement, même argument.
+    \item Ensuite on doit commencer $last_q(t_1)$, seule transition possible. Mais elle peut être franchie partiellement.
+    \item Si elle est franchie de manière complète, on atteint un marquage dans $\Good$, et la preuve se termine pas induction.
+    \item Sinon, on peut débuter la simulation d'une nouvelle transition $t_2\in T$ avec la transition
+    $first_{\overline q}(t_2)$. Observons que si la transition $last_q(t_1)$ est tirée immédiatement après la transition $first_{\overline q}(t_2)$, on peut inverser l'ordre. En effet, les arcs inhibiteurs concernés sont satisfaits et inchangés par les tirs de ces transitions. 
+    \item Après $first_{\overline q}(t_2)$, les seules transitions franchissables sont $last_q(t_1)$
+    et $tr_q$. Or, le tir de $tr_q$ mène à une configuration bloquante, d'après le lemme précédent. Donc on doit franchir $last_q(t_1)$. 
+    \item On déplace les franchissements de $last_q(t_1)$ avant ceux de $first_{\overline q}(t_2)$, et on obtient ainsi un franchissement complet de $last_q(t_1)$. On conclut par induction puisqu'on a atteint un marquage dans $\Good$.
+    \item On vérifie que le run $\rho'$ ainsi obtenu satisfait la propriété $\rho' \in \Phi(\Runs({\cal M}))$.
+\end{itemize}
+
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Nous devons désormais prouver que le réseau de Petri $\overline{\mathcal{N}}$ ainsi construit simule correctement notre machine de Minsky $\mathcal{M}$. En particulier, il faut s'assurer que tout changement d'état dans $\mathcal{M}$ se fait de manière discrète dans $\overline{\mathcal{N}}$. Pour ce faire, nous prouvons le lemme suivant.
+
+\begin{lemma}[\hypertarget{discrete-sequences}{Séquences continues bloquantes}]
+    Soit $\overline{\mathcal{N}} = (\overline{P}, \overline{T}, \overline{F}, \overline{m_0})$ un réseau de Petri discrétisé qui simule une machine de Minsky $\mathcal{M} = (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$ telle que $Q_{\mathcal{M}} = \{p_0, ..., p_n\}$. Soient $n \in \mathbb{N}$ et $\sigma = \alpha_1t_{\omega_1}...\alpha_nt_{\omega_n} \in \overline{T}^n$ une séquence de $n$ tirs telle que : \begin{enumerate}
+        \item $\forall i < n,\ t_{\omega_i} \neq t_{\omega_{i+1}}$.
+        \item $\forall k \leq n,\ 0 < \alpha_k \leq 1$.
+    \end{enumerate}
+    S'il existe $\overline{m} \in \mathbb{N}^{\overline{P}}$ tel que $\overline{m_0} \xrightarrow{\sigma} \overline{m}$, alors $\forall k \leq n,\ \alpha_k \in \mathbb{N}^*$.
+\end{lemma}
+
+\begin{proof}
+    Supposons qu'il existe $\overline{m} \in \mathbb{N}^{\overline{P}}$ tel que $\overline{m_0} \xrightarrow{\sigma} \overline{m}$ et que l'on a $k \leq n$ minimal tel que $0 < \alpha_k < 1$. Pour tout $i \leq n$, on note $\restrict{\sigma}{i}$ la séquence de tirs $\alpha_1t_{\omega_1}...\alpha_it_{\omega_i}$ et $\overline{m_i}$ le marquage tel que $\overline{m_0} \xrightarrow{\restrict{\sigma}{i}} \overline{m_i}$ (donc $\sigma = \restrict{\sigma}{n}$ d'où $\overline{m} = \overline{m_n}$). Alors tous les marquages $(\overline{m_i})_{i < k}$ sont discrets et, par construction du réseau, $(\overline{m_{k-1}}(q), \overline{m_{k-1}}(\overline{q})) \in \{(0, 1), (1, 0)\}$. Notons également $ts(m)$ l'ensemble des transitions sensibilisées pour un marquage $m \in \mathbb{Q}_+^{\overline{P}}$. Supposons d'abord $\overline{m_{k-1}}(q) = 1$. On sait que $t_k \in T$ dans $\mathcal{N}$ est implémenté par $t_{\omega_k} \in \{t_k^-, t_k^+, \overline{t_k^-}, \overline{t_k^+}\}$ dans $\overline{\mathcal{N}}$ ; or, $t_{\omega_k} \notin \{t_k^+, \overline{t_k^-}\}$ d'une part car l'arc $(q, t_k^+)$ est inhibiteur or $\overline{m_{k-1}}(q) = 1$ et d'autre part $\overline{F}(\overline{q}, \overline{t_k^-}) = 1$ or $\overline{m_{k-1}}(\overline{q}) = 0$. Alors, $ts(\overline{m_{k-1}}) = \{t_k^-, \overline{t_k^+}\}$.
+
+    \noindent
+    (\textbf{Cas} $\restrict{\sigma}{k} =\ ...\alpha_k\overline{t_k^+}$).
+    Supposons d'abord que $t_{\omega_k} = \overline{t_k^+}$. Comme $\preb{\overline{t_k^+}} = \{\overline{r_{t_k}}, \overline{q}\}$ avec $\overline{F}(\overline{r_{t_k}}, \overline{t_k^+}) = 1,\ \overline{F}(\overline{q}, \overline{t_k^+}) = 2\overline{q}$, alors $\overline{m_{k-1}}(\overline{r_{t_k}}) = 1$ et $\overline{m_{k-1}}(\overline{q}) = 0$, inévitablement. On en déduit que l'on peut tirer $\alpha_k\overline{t_k^+}$. On obtient : \begin{itemize}
+        \item $\overline{m_k}(\overline{r_{t_k}}) = 1 - \alpha_k$.
+        \item $\overline{m_k}(p_{k+1}) = \alpha_k$.
+    \end{itemize}
+    Si $k = n$, alors $\overline{m_n}$ n'est pas un marquage discret, en contradiction avec l'hypothèse. Supposons donc que $k < n$.
+
+    \noindent
+    (\textbf{Cas} $\restrict{\sigma}{k+1} =\ ...\alpha_k\overline{t_k^+}\alpha_{k+1}t_{k+1}^-$).
+    Ainsi, $ts(\overline{m_k}) \setminus \{t_{\omega_k}\} = \{t_{k+1}^-\}$. En effet, on déduit de ce marquage que $\overline{t_{k+1}^-}$ ne l'est pas car $\overline{F}(\overline{q}, \overline{t_{k+1}^-}) = 1$ or $\overline{m_k}(\overline{q}) = 0$, d'où $ts(\overline{m_k}) =  \{\overline{t_k^+}, t_{k+1}^-\}$. Par hypothèse sur $\restrict{\sigma}{k+1}$, on a $t_{\omega_k} \neq t_{\omega_{k+1}}$, d'où $t_{\omega_{k+1}} = t_{k+1}^-$. En tirant $\alpha_{k+1}t_{k+1}^-$ où $0 < \alpha_{k+1} \leq \alpha_k < 1$, on obtient : \begin{itemize}
+        \item $\overline{m_{k+1}}(q) = 1 - \alpha_{k+1}$.
+        \item $\overline{m_{k+1}}(p_{k+1}) = \alpha_k - \alpha_{k+1}$.
+        \item $\overline{m_{k+1}}(\overline{q}) = \alpha_{k+1}$.
+    \end{itemize}
+    Si $k + 1 = n$, alors $\overline{m_n}$ n'est pas un marquage discret. Supposons maintenant que $k + 1 < n$.
+
+    \noindent
+    (\textbf{Cas} $\restrict{\sigma}{k+2} =\ ...\alpha_k\overline{t_k^+}\alpha_{k+1}t_{k+1}^-\alpha_{k+2}\overline{t_{k+1}^-}$).
+    Ainsi, $ts(\overline{m_{k+1}}) \setminus \{t_{\omega_{k+1}}\} = \{\overline{t_{k+1}^-}\}$ et $\overline{t_k^+} \notin ts(\overline{m_{k+1}})$ car $\overline{F}(\overline{q}, \overline{t_k^+}) = 2\overline{q}$. En tirant $\alpha_{k+2}\overline{t_{k+1}^-}$ où $0 < \alpha_{k+2} \leq min(\alpha_k - \alpha_{k+1}, \alpha_{k+1}) < 1$, on obtient : \begin{itemize}
+        \item $\overline{m_{k+2}}(q) = 1 - \alpha_{k+1} + \alpha_{k+2}$.
+        \item $\overline{m_{k+2}}(\overline{q}) = \alpha_{k+1} - \alpha_{k+2}$.
+        \item $\overline{m_{k+2}}(p_{k+1}) = \alpha_k - \alpha_{k+1} - \alpha_{k+2}$.
+        \item $\overline{m_{k+2}}(\overline{r_{t_{k+1}}}) = \alpha_{k+2}$.
+    \end{itemize}
+    Remarquons que $\alpha_{k+1} = \alpha_{k+2} \Longleftrightarrow \overline{m_{k+2}}(\overline{q}) = 0$. Ainsi, si $\alpha_{k+1} \neq \alpha_{k+2}$, alors les seules transitions sensibilisées aux tours suivants sont $t_{k+1}^-, \overline{t_{k+1}^-}$. En les tirant successivement, on conserve $\overline{m_{k+i}}(\overline{r_{t_k}}) = 1 - \alpha_k$ pour tout $i \geq k + 2$, donc tout marquage accessible depuis $\overline{m_{k+2}}$ n'est pas discret en ce cas. Supposons donc que $\alpha_{k+1} = \alpha_{k+2}$ et $k + 2 < n$. Alors $ts(\overline{m_{k+2}}) = \{\overline{t_k^+}, t_{k+1}^-, \overline{t_{k+1}^+}\}$.
+
+    \noindent
+    (\textbf{Cas} $\restrict{\sigma}{k+3} =\ ...\alpha_k\overline{t_k^+}\alpha_{k+1}t_{k+1}^-\alpha_{k+1}\overline{t_{k+1}^-}\alpha_{k+3}\overline{t_k^+}$). Supposons d'abord que $t_{\omega_{k+3}} = \overline{t_k^+}$. On sait que $0 < \alpha_{k+3} \leq 1 - \alpha_k < 1$ car $\overline{m_{k+2}}(\overline{r_{t_k}}) = 1 - \alpha_k$. Si $\alpha_{k+3} \neq 1 - \alpha_k$, $ts(\overline{m_{k+2}}) = ts(\overline{m_{k+3}})$. Supposons donc que l'on tire $\alpha_{k+3}\overline{t_k^+}$ où $\alpha_{k+3} = 1 - \alpha_k$. On obtient : \begin{itemize}
+        \item $\overline{m_{k+3}}(\overline{r_{t_k}}) = 0$.
+        \item $\overline{m_{k+3}}(p_{k+1}) = 1 - 2\alpha_{k+1}$.
+    \end{itemize}
+\end{proof}
+
+Le théorème suivant appuie le fait que toute machine de Minsky peut être simulée de manière équivalente par un réseau de Petri ainsi construit.
+
+\begin{theorem}
+    Soit $\mathcal{M} = (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$ une machine de Minsky telle que $Q_{\mathcal{M}} := \{q_0, ..., q_m\}$, $m \in \mathbb{N}$. Posons $\rho_0 = (q_0, 0, 0)$ et soit $\rho_n = (q_n, i_n, j_n) \in C_{\mathcal{M}}$ une configuration, $n, i_n, j_n \in \mathbb{N}$. Alors
+    \[\rho_n \in \reach[n]{M}{\rho_0} \Longleftrightarrow \Phi(\rho_n) \in \creach[2n]{\overline{N}}{\Phi(\rho_0)}.\]
+\end{theorem}
+
+\begin{proof}
+    \textbf{Condition suffisante.}
+    \natinduction{P}{\mathbb{N}}{\rho_n \in \reach[n]{M}{\rho_0} \Longrightarrow \Phi(\rho_n) \in \creach[2n]{\overline{N}}{\Phi(\rho_0)}}{
+        Trivialement, $\rho_0 \in \reach[0]{M}{\rho_0}$ donc $\Phi(\rho_0) \in \reach[0]{\overline{N}}{\Phi(\rho_0)}$ car aucune transition n'est tirée.
+    }{
+        Soit $\rho_{n+1} \in \reach[n+1]{M}{\rho_0}$. On a une séquence de transitions labellisées $(t_k)_{k \in [\![1, n]\!]}$ telles que $\rho_0 \xrightarrow{t_0} ... \xrightarrow{t_{n-1}} \rho_n \xrightarrow{t_n} \rho_{n+1}$ avec $\rho_n := (q_n, i_n, j_n)$, $\rho_{n+1} := (q_{n+1}, i_{n+1}, j_{n+1})$, d'où l'on a $\rho_n \in \reach[n]{M}{\rho_0}$ et par hypothèse de récurrence, $\Phi(\rho_n) \in \creach[2n]{M}{\Phi(\rho_0)}$. De plus, par construction de $\overline{\mathcal{N}}$, $t_n$ est implémentée par un ensemble de transitions $\{t_n^-, t_n^+, \overline{t_n^-}, \overline{t_n^+}\}$ permettant de passer de $q_n$ à $q_{n+1}$ de façon discrète. Ainsi, si $\Phi(\rho_n)(q) = 1$ (resp. $\Phi(\rho_n)(\overline{q}) = 1$), on tire $\sigma = t_n^- \overline{t_n^+} \in \overline{T}^2$ (resp. $\overline{\sigma} = \overline{t_n^-}t_n^+  \in \overline{T}^2$). On obtient ainsi un marquage $\overline{m_{n+1}}$ tel que $\overline{m_{n+1}}(q_n) = 0$ et $\overline{m_{n+1}}(q_{n+1}) = 1$. En particulier, les transitions $[\![\sigma]\!]$ (resp. $[\![\overline{\sigma}]\!]$) conservent l'action sur les compteurs $(c_1, c_2)$, donc $\overline{m_{n+1}}(c_1) = i_{n+1}$ et $\overline{m_{n+1}}(c_2) = j_{n+1}$. Ainsi, $\overline{m_{n+1}} = \Phi(\rho_{n+1})$ et comme $\Phi(\rho_0) \rightarrow^* \Phi(\rho_n) \xrightarrow{\sigma} \Phi(\rho_{n+1})$ (resp. $\Phi(\rho_0) \rightarrow^* \Phi(\rho_n) \xrightarrow{\overline{\sigma}} \Phi(\rho_{n+1})$), alors $\Phi(\rho_{n+1}) \in \reach[2(n+1)]{\overline{N}}{\Phi(\rho_0)}$.
+    }
+
+    \noindent
+    \textbf{Condition nécessaire.}
+    \natinduction{Q}{\mathbb{N}}{\Phi(\rho_n) \in \creach[2n]{\overline{N}}{\Phi(\rho_0)} \Longrightarrow \rho_n \in \reach[n]{M}{\rho_0}}{
+        Trivialement, $\Phi(\rho_0) = (1, 0, ..., 0, n_q, n_{\overline{q}}) \in \creach[2n]{M}{\Phi(\rho_0)}$ et donc $\rho_0 \in \reach{\overline{N}}{\rho_0}$ indépendamment de la valeur de $(n_q, n_{\overline{q}}) \in \{(1, 0), (0, 1)\}$ car aucune transition n'est tirée.
+    }{
+        Supposons également que l'on a $\Phi(\rho_{n+1}) := (0, ..., 0, \underbrace{1}_{q_k}, 0, ..., 0, i_{n+1}, j_{n+1}, n_q, n_{\overline{q}})$ tel que $\Phi(\rho_{n+1}) \in \reach[2(n+1)]{\overline{N}}{\Phi(\rho_0)}$ et $i_{n+1}, j_{n+1} \in \mathbb{N}$. Alors on a $\sigma := \alpha_0t_{\omega_0}...\alpha_{2(n+1)}t_{\omega_{2(n+1)}} \in \overline{T}^{2(n+1)}$ une séquence de transitions telle que $\Phi(\rho_0) \xrightarrow{\alpha_0t_{\omega_0}} ... \rightarrow $
+        
+        Supposons d'abord que $n_q = 1,\ n_{\overline{q}} = 0$. 
+    }
+\end{proof}
+
+Comme l'arrêt d'une machine de Minsky est indécidable, il est désormais clair que l'apparition des arcs inhibiteurs dans nos réseaux de Petri continus rend ce même caractère à la propriété d'accessibilité.
+
+\subsubsection{Implémentation d'arcs de reset}
+
+Dans cette section, nous nous intéressons à l'ajout d'arcs de reset à nos réseaux de Petri continus. On pose leur sémantique dans la définition suivante.
+
+\begin{definition}
+    Un réseau de Petri continu à arcs de reset est un quintuplet $\mathcal{N} := (P, T, F, Inh, m_0)$ où : \begin{itemize}
+        \item $(P, T, F, m_0)$ est un réseau de Petri continu.
+        \item $Inh$ est une matrice indexée par $P \times T$ à coefficients dans $\{0, 1\}$ telle que, pour tous $(p, t) \in  P \times T$ : \[\begin{cases}
+            Inh(p, t) = 1 & \text{si } (p, t) \text{ est inhibiteur.} \\
+            Inh(p, t) = 0 & \text{sinon.}
+        \end{cases}\]
+        Ainsi, si $Inh(p, t) = 1$, alors nécessairement $F(p, t) = F(t, p) = 0$.
+    \end{itemize}
+\end{definition}
+
+Nous nous penchons alors sur le problème d'accessibilité en nous inspirant des travaux de \cite{dufourd} dans leurs réseaux de Petri classiques. Ces derniers reconstruisent le réseau en s'appuyant sur la création de places jumelles $p'$ pour toute place $p$ impliquée dans le test à 0 d'un arc inhibiteur : c'est une place inhibitrice. Soit donc $\mathcal{N} = (P, T, F, Inh, m_0)$ un réseau de Petri à arcs inhibiteurs. On pose
+\begin{equation*}
+    \function{\indicator_{Inh}}{P}{\{0, 1\}}{p}{\begin{cases}
+        1 & \text{si } \exists t \in T,\ Inh(p, t) = 1. \\
+        0 & \text{sinon.}
+    \end{cases}}
+\end{equation*}
+la fonction indicatrice d'inhibition et $\mathbb{I}_{\mathcal{N}} := \indicator_{Inh}^{-1}(\{1\}) = \{p \in P \mid \indicator_{Inh}(p) = 1\}$ l'ensemble des places inhibitrices de $\mathcal{N}$. Ils définissent $\mathcal{N}^+ := (P^+, T, F^+, Res, m_0^+)$ le réseau de Petri jumeau à arcs de reset où : \begin{enumerate}
+    \item $P^+ := P \cup P'$, où $P' := \{p' : p \in \mathbb{I}_{\mathcal{N}}\}$ (avec $P \cap P' = \emptyset$).
+    \item La relation de flots $F^+$ est définie, $\forall (p, t) \in P \times T$, par : \[\begin{cases}
+        F^+(p, t) = F^+(t, p') = 0 & \text{si } Inh(p, t) = 1.\\
+        F^+(p, t) := F(p, t),\ F^+(t, p) := F(t, p) & \text{sinon.}
+    \end{cases}\]
+    \item On étend les marquages de $\mathcal{N}$ à $\mathcal{N^+}$ par l'application \begin{equation*}
+        \function{\extend}{\mathbb{Q}^P}{\mathbb{Q}^{P^+}}{(p_1, ..., p_n)}{(p_1, ..., p_n, p'_{\omega_1}, ..., p'_{\omega_k})}
+    \end{equation*}
+    avec $1 \leq \omega_1 < \cdots < \omega_k \leq n,\ k \leq n$ où les places distinctes $p'_{\omega_i}$ sont les jumelles de places $p_{\omega_i}$.
+    \item On pose $Res \in \mathcal{M}_{P^+ \times T}(\{0, 1\})$ la matrice de reset telle que, pour tous $(p, t) \in P \times T$, \begin{itemize}
+        \item $Res(p, t) = 0$.
+        \item $Res(p', t) = \begin{cases}
+            p' & \text{si } Inh(p, t) = 1 \\
+            0  & \text{sinon.}
+        \end{cases}$
+    \end{itemize}
+    \item Pour tout tir $m \creaches[\alpha t] m'$, on redéfinit l'équation caractéristique de la manière suivante : \[m' = m + \alpha C(t) - Res(t)\]
+\end{enumerate}
+
+La figure \ref{fig:reset-arc-petri-net} nous montre un exemple concret d'une telle construction.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/reset-arc-petri-net.png}
+    \caption{Transformation d'un réseau à arcs inhibiteurs en réseau à arcs de reset par \cite{dufourd}.}
+    \label{fig:reset-arc-petri-net}
+\end{figure}
+La relation de flots avec tout arc de $p$ est donc reproduite à l'identique pour $p'$, à l'exception de l'arc inhibiteur dont la liaison avec $p$ est retirée pour la transformer en arc de reset sur $p'$.
+
+Nous allons prouver que ces deux structures sont isomorphes en nous appuyant sur l'algèbre linéaire. Pour commencer, nous admettons la proposition suivante (qui peut être démontrée) :
+
+\begin{proposition}
+    $\mathbb{Q}^P$ est un $\mathbb{Q}$-espace vectoriel de dimension $|P|$.
+\end{proposition}
+
+Reprenons alors notre définition de $\extend$, et montrons les propriétés suivantes.
+
+\begin{property}
+    L'application $\extend$ est linéaire sur $\mathbb{Q}^P$.
+\end{property}
+
+\begin{proof}
+    Soient $x = (x_1, ..., x_n),\ y = (y_1, ..., y_n) \in \mathbb{Q}^P,\ \alpha \in \mathbb{Q}$.
+    Alors \begin{align*}
+        \extend[\alpha x + y] & = \extend[(\alpha x_1 + y_1, ..., \alpha x_n + y_n)] \\
+                              & = (\alpha x_1 + y_1, ..., \alpha x_n + y_n, (\alpha x_{\omega_1} + y_{\omega_1})', ..., (\alpha x_{\omega_k} + y_{\omega_k})') \\
+                              & = (\alpha x_1 + y_1, ..., \alpha x_n + y_n, \alpha x'_{\omega_1} + y'_{\omega_1}, ..., \alpha x'_{\omega_k} + y'_{\omega_k}) \\
+                              & = \alpha(x_1, ..., x_n, x'_{\omega_1}, ..., x'_{\omega_k}) + (y_1, ..., y_n, y'_{\omega_1}, ..., y'_{\omega_k}) \\
+                              & = \alpha \extend[x] + \extend[y].
+    \end{align*}
+\end{proof}
+
+\begin{property}
+    L'application $\extend[\cdot]$ est injective.
+\end{property}
+
+\begin{proof}
+    Soient $m_1, m_2 \in \mathbb{Q}^P$ tels que $\extend[m_1] = \extend[m_2]$.
+    Trivialement, $\forall p \in P$, \[m_1(p) = \extend[m_1](p) = \extend[m_2](p) = m_2(p),\] d'où $m_1 = m_2$.
+\end{proof}
+
+Remarquons que tout marquage $m^+$ dans $\mathcal{N}^+$ est défini via un marquage $m$ de $\mathcal{N}$. Cela signifie qu'un tir de reset d'une place non vide $p^+ \in P^+$ dans $\mathcal{N^+}$ est irrécupérable dans $\mathcal{N}$, et donc le marquage obtenu n'a aucun équivalent dans ce dernier. On s'intéresse donc seulement à l'ensemble $\extend[\mathbb{Q}^P] \subseteq \mathbb{Q}^{P^+}$, c'est-à-dire les extensions des marquages de $\mathcal{N}$. Posons maintenant $\coextend : \mathbb{Q}^P \rightarrow \extend[\mathbb{Q}^P]$ la corestriction de $\extend$ à $\mathbb{Q}^P$. Il vient la propriété suivante.
+
+\begin{proposition}
+    L'application $\coextend$ est un isomorphisme entre $\mathbb{Q}^P$ et $\extend[\mathbb{Q}^P]$.
+\end{proposition}
+
+\begin{proof}
+    Restreindre l'ensemble d'arrivée de $\extend$ ne change en rien son caractère linéaire et injectif. De plus, la corestriction $\restrict{f}{f(E)}$ de toute application $f : E \rightarrow F$ est surjective par définition. Ainsi, $\coextend$ est injective et surjective, donc bijective. Comme elle est également linéaire, alors on en déduit qu'il s'agit d'un isomorphisme.
+\end{proof}
+
+\begin{remark}
+    Pour tout marquage $m^+ \in \extend[\mathbb{Q}^P]$, il existe donc un unique marquage $m \in \mathbb{Q}^P$ tel que $\coextend[m] = m^+$. En ce cas, on note également $\rcoextend[m^+] = m$.
+\end{remark}
+
+Nous avons donc un isomorphisme $\coextend$ entre les marquages de $\mathbb{Q}^P$ et de $\extend[\mathbb{Q}^P]$. Or, nous nous intéressons aux marquages \textit{accessibles} dans $\mathcal{N}$ et $\mathcal{N}^+$ respectivement depuis $m_0$ et $m_0^+$, ce qui correspond respectivement aux ensembles $\creach{N}{m_0}$ et $\creach{N^+}{m_0^+} = \extend[\creach{N}{m_0}]$. Nous voulons donc prouver que ces deux réseaux ont exactement les mêmes comportements. Nous nous appuierons sur les équations caractéristiques de chaque réseau, qui reposent sur leurs matrices d'incidence $C$ et $C^+$, c'est pourquoi nous commençons par prouver le lemme suivant qui nous permettra de reconstruire les chemins dans chaque réseau et d'établir une équivalence entre les deux.
+
+\begin{lemma}
+    \label{lemma:net-balance-preservation}
+    Soient : \begin{itemize}
+        \item $(m_1, m_1^+) \in \creach{N}{m_0} \times \extend[\creach{N}{m_0}]$ des marquages accessibles.
+        \item $(m_2, m_2^+) \in \mathbb{Q}_+^P \times \extend[\mathbb{Q}_+^P]$ des marquages tels que $\coextend[m_2] = m_2^+$.
+        \item $(\alpha, t) \in \mathbb{Q}_+ \times T$ un tir tel que $m_1 \creaches[\alpha t] m_2$ et $m_1^+ \creaches[\alpha t] m_2^+$.
+    \end{itemize}
+    Alors $\coextend[m_1] = m_1^+$.
+\end{lemma}
+
+\begin{proof}
+    Supposons d'abord que pour toute place $p \in \preb{t}$, l'arc $(p, t)$ n'est pas inhibiteur.
+    On a le système suivant, issu de l'équation caractéristique : \begin{equation*} (S) :
+        \begin{cases}
+            m_2 = m_1 + \alpha Ct \\
+            m_2^+ = m_1^+ + \alpha C^+t \\
+            \coextend[m_2] = m_2^+
+        \end{cases}
+    \end{equation*}
+    Comme $t$ n'est relié à aucun arc inhibiteur, alors on a l'égalité $\coextend[Ct] = C^+t$. De plus, par linéarité de $\coextend$, il vient que \begin{align*}
+        \coextend[m_2] & = \coextend[m_1 + \alpha Ct] \\
+                       & = \coextend[m_1] + \alpha \coextend[Ct],
+    \end{align*}
+    d'où $(S) \Longrightarrow m_2^+ = \coextend[m_1] + \alpha \coextend[Ct]$ et a fortiori, \begin{equation*}
+        \begin{tabular}{c r c l}
+                                  & $m_1^+ + \alpha C^+t$ & $=$ & $\coextend[m_1] + \alpha \coextend[Ct]$ \\
+            $\Longleftrightarrow$ &               $m_1^+$ & $=$ & $\coextend[m_1]$.
+        \end{tabular}
+    \end{equation*}
+    Supposons maintenant que l'on des arcs inhibiteurs vers $t$. Posons $I(t) := \{p \in \preb{t} \mid (p, t) \text{ est inhibiteur}\}$. Alors $\forall p \in I(t)$, \begin{itemize}
+        \item $(Ct)(p) = (C^+t)(p) = (C^+t)(p') = 0$ car un tel arc empêche $t$ de produire vers $p$ et $p'$, et
+        \item $m_1(p) = m_1^+(p') = 0$ car nécessairement $p$ est vide.
+    \end{itemize}
+    Ainsi, les places $q \in \preb{t} \setminus I(t)$ ne changent en rien l'équation $(S)$, d'où l'on obtient que $Ct = C^+t$ et donc $\coextend[m_1] = m_1^+$ en s'appuyant sur le raisonnement précédent.
+\end{proof}
+
+\begin{lemma}
+    \label{lemma:net-equivalence}
+    Soient : \begin{itemize}
+        \item $(m_1, m_1^+) \in \creach{N}{m_0} \times \extend[\creach{N}{m_0}]$ des marquages accessibles tels que $\coextend[m_1] = m_1^+$.
+        \item $(m_2, m_2^+) \in \mathbb{Q}_+^P \times \extend[\mathbb{Q}_+^P]$.
+        \item $(\alpha, t) \in \mathbb{Q}_+ \times T$ un tir.
+    \end{itemize}
+    Alors $m_1 \creaches[\alpha t] m_2 \Longleftrightarrow m_1^+ \creaches[\alpha t] m_2^+$ où $\coextend[m_2] = m_2^+$.
+\end{lemma}
+
+\begin{proof}
+    \textbf{Condition suffisante.} Supposons d'abord que pour toute place $p \in \preb{t}$, l'arc $(p, t)$ n'est pas inhibiteur.
+    Alors on a les implications suivantes : \begin{align*}
+        m_1 \creaches[\alpha t] m_2 & \Longrightarrow m_2 = m_1 + \alpha C t \\
+                                    & \Longrightarrow \coextend[m_2] = \coextend[m_1 + \alpha C t] = \coextend[m_1] + \alpha \coextend[Ct]
+    \end{align*}
+    Comme $t$ n'est relié à aucun arc inhibiteur, alors on a l'égalité $\coextend[Ct] = C^+t$. De plus, par hypothèse, $\coextend[m_1] = m_1^+$, d'où \[\coextend[m_2] = m_1^+ + \alpha C^+t\]
+    d'où $m_1^+ \creaches[\alpha t] \coextend[m_2]$.
+    
+    Supposons maintenant que l'on des arcs inhibiteurs vers $t$. Posons \[I(t) := \{p \in \preb{t} \mid (p, t) \text{ est inhibiteur}\}\] l'ensemble des places inhibitrices de $\preb{t}$. Alors $\forall p \in I(t)$, \begin{itemize}
+        \item $(Ct)(p) = (C^+t)(p) = (C^+t)(p') = 0$ car un tel arc empêche $t$ de produire vers $p$ et $p'$, et
+        \item $m_1(p) = m_1^+(p') = 0$ car nécessairement $p$ est vide.
+    \end{itemize}
+    Ainsi, les places $q \in \preb{t} \setminus I(t)$ ne changent en rien l'équation $(S)$, d'où l'on obtient que $\coextend[Ct] = C^+t$ et donc $m_1^+ \creaches[\alpha t] \coextend[m_2]$ en s'appuyant sur le raisonnement précédent.\\
+    \textbf{Condition nécessaire.} Si $t$ n'est liée à aucun arc de reset, alors on peut réappliquer la première partie du raisonnement du cas précédent avec $\rcoextend$.
+    
+    Supposons maintenant que l'on a des arcs de reset liés à $t$. Posons \[J(t) := \{p \in \preb{t} \mid Res(p, t) = p\}\] l'ensemble des places de $\preb{t}$ telles que l'arc $(p, t)$ est de reset. Soit $p' \in J(t)$, donc $p'$ admet une place jumelle $p$ inhibitrice dans $\mathcal{N}$. Rappelons que $m_1^+ \creaches[\alpha t] m_2^+$, donc si $m_1^+(p) > 0$, alors le tir $\alpha t$ créera un déséquilibre irrécupérable entre les marquages de $\mathcal{N}$ et $\mathcal{N}^+$ et donc $m_2^+ \notin \extend[\mathbb{Q}^P]$, en contradiction avec les hypothèses principales. On en déduit que $m_1^+(p) = 0$. On revient alors au cas précédent avec les déductions suivantes : \begin{itemize}
+        \item $(Ct)(p) = (C^+t)(p) = (C^+t)(p') = 0$ car un tel arc empêche $t$ de produire vers $p$ et $p'$, et
+        \item $m_1(p) = m_1^+(p') = 0$ car nécessairement $p$ est vide.
+    \end{itemize}
+    
+    Ainsi, les places $q \in \preb{t} \setminus J(t)$ ne changent en rien l'équation $(S)$, d'où l'on obtient que $\rcoextend[C^+t] = Ct$ et donc $m_1 \creaches[\alpha t] \rcoextend[m_2^+]$ en s'appuyant sur le raisonnement précédent.
+\end{proof}
+
+Grâce à ce lemme, on prouve dans le théorème suivant que tout marquage $m$ est accessible dans $\mathcal{N}$ si et seulement si son équivalent $\coextend[m]$ l'est également dans $\mathcal{N}^+$ via la même séquence de tirs.
+
+\begin{theorem}
+    \label{theorem:net-equivalence}
+    Soient : \begin{itemize}
+        \item $(m, m^+) \in \mathbb{Q}_+^P \times \extend[\mathbb{Q}_+^P]$ des marquages tels que $m^+ = \coextend[m]$.
+        \item $\sigma_n \in T^n$ une séquence de tirs de longueur $n \in \mathbb{N}$.
+    \end{itemize}
+    Alors \[m_0 \creaches[\sigma_n] m \Longleftrightarrow m_0^+ \creaches[\sigma_n] m^+.\]
+\end{theorem}
+
+\begin{proof}
+    On montre ce lemme par induction sur la longueur de $\sigma_n := \alpha_1t_{\omega_1}...\alpha_nt_{\omega_n}$.\\
+    \induction{\mathbb{N}}{
+        De toute évidence, toute séquence de tirs $\sigma_0$ de longueur $0$ est vide. D'une part, on sait que $\coextend[m_0] = m_0^+$ par construction de $\mathcal{N}^+$. D'autre part, comme aucune transition n'est tirée, on sait que $m_n = m_0$ et $m_n^+ = m_0^+$. Ainsi, $m_0 \creaches[\sigma_0] m_n \Longleftrightarrow m_0^+ \creaches[\sigma_0] m_n^+$.
+    }{Pour une meilleure lisibilité, on pose $m_{n+1} := m,\ m_{n+1}^+ := m^+$.\\
+        On sait que \begin{equation}\tag{$*$}
+            m_0 \creaches[\sigma_{n+1}] m_{n+1} \Longleftrightarrow m_0 \creaches[\sigma_n] m_n \creaches[\alpha_nt_{\omega_n}] m_{n+1}
+        \end{equation}
+        avec $m_n \in \mathbb{Q}_+^P,\ \sigma_n \in T^n$. De plus, on a : \begin{enumerate}
+            \item $m_0 \creaches[\sigma_n] m_n \Longleftrightarrow m_0^+ \creaches[\sigma_n] m_n^+$ par hypothèse de récurrence.
+            \item Par (i), si $m_0 \creaches[\sigma_n] m_n$ alors $m_0^+ \creaches[\sigma_n] m_n^+$ d'où $\coextend[m_n] = m_n^+$ par le lemme \ref{lemma:net-balance-preservation}. La réciproque débouche sur le même résultat et donc dans tous les cas, $\coextend[m_n] = m_n^+$.
+            \item Par (ii), $\coextend[m_n] = m_n^+$ d'où $m_n \creaches[\alpha_{n+1}t_{\omega_{n+1}}] m_{n+1} \Longleftrightarrow m_n^+ \creaches[\alpha_{n+1}t_{\omega_{n+1}}] m_{n+1}^+$ par le lemme \ref{lemma:net-equivalence}.
+        \end{enumerate}
+        Il s'en suit inévitablement que \begin{align*}
+            (*) & \Longleftrightarrow m_0^+ \creaches[\sigma_n] m_n^+ \creaches[\alpha_{n+1}t_{\omega_{n+1}}] m_{n+1}^+ \\
+                & \Longleftrightarrow m_0^+ \creaches[\sigma_{n+1}] m_{n+1}^+.
+        \end{align*}
+    }
+\end{proof}
+
+Enfin, on peut directement en déduire le corollaire fondamental qui nous permet de conclure sur le résultat de décidabilité du problème d'accessibilité dans les réseaux de Petri à arcs de reset.
+
+\begin{corollary}
+    Le problème de l'accessibilité dans les réseaux de Petri à arcs de reset est indécidable.
+\end{corollary}
+
+\begin{proof}
+    On réduit donc le problème de l'accessibilité des réseaux à arcs de reset aux réseaux à arcs inhibiteurs. Le théorème \ref{theorem:net-equivalence} nous a permis de prouver que notre construction peut simuler de manière équivalente les arcs inhibiteurs à partir d'arcs de reset. Or, comme le problème est indécidable pour les réseaux à arcs inhibiteurs, il est également indécidable dans les réseaux à arcs de reset.
+\end{proof}
+
+\printbibliography[title = Références]
+
+\end{document}
