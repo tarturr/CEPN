@@ -17,6 +17,7 @@
 \usepackage[sfdefault]{biolinum}
 \usepackage{hyperref}
 \usepackage{unicode-math}
+\usepackage[table]{xcolor}
 
 \addbibresource{bibliography.bib}
 
@@ -557,10 +558,14 @@ Tout d'abord, soit $q \in Q_{\mathcal{M}}$ un état. S'il existe une transition 
     \item Une machine de Minsky $\mathcal{M} := (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$ où $Q_{\mathcal{M}} := \{q_0, \cdots, q_m\},\ m \in \mathbb{N}$ et $\rho_0 = (q_0, 0, 0)$.
     \item Un réseau de Petri continu à arcs inhibiteurs $\mathcal{N} := (P, T, F, Inh, m_0)$ simulant $\mathcal{M}$ où donc $m_0 := \Phi(\rho_0)$.
 \end{itemize}
+Un exemple d'une telle construction a été produit dans la figure \ref{fig:temporized-minsky-machine}. Les transitions rouges du réseau de Petri sont les transitions continues avec les contraintes telles que définies précédemment.
 
-% \begin{property}
-%     Soient $(m_1, \sigma, m_2) \in \mathbb{N}^{\overline{P}} \times T \times \mathbb{N}^{\overline{P}}$ tels que $m_1 \reaches[\sigma] m_2$. S'il existe $\rho_1 \in C_{\mathcal{M}},\ t \in T_{\mathcal{M}}$ tels que $m_1 = \Phi(\rho_1)$ et $\sigma = \Psi(t)$, alors il existe $\rho_2 \in C_{\mathcal{M}}$ tel que $m_2 = \Phi(\rho_2)$.
-% \end{property}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\linewidth]{img/temporized-minsky-machine.png}
+    \caption{Transformation triviale de la machine de Minsky et de son réseau de Petri correspondant.}
+    \label{fig:temporized-minsky-machine}
+\end{figure}
 
 La propriété suivante est fondamentale. En effet, elle garantit que toute configuration de $\mathcal{M}$ adaptée en marquage $m$ dans $\mathcal{N}$ débouchera sur un marquage $m'$ de la même forme, en prenant en compte que les transitions tirées pour passer de $m$ à $m'$ sont précisément des exécutions de $\mathcal{M}$.
 
@@ -902,16 +907,37 @@ Enfin, on peut directement en déduire le corollaire fondamental qui nous permet
 \addcontentsline{toc}{section}{Conclusions}
 \section*{Conclusions}
 
-L'introduction des réseaux de Petri continus étendus nous a permis de développer une nouvelle sémantique originale. Celle-ci avait pour objectif d'abstraire le comportement discret des réseaux de Petri discrets étendus dans la perspective d'obtenir de nouveaux résultats de décidabilité.
+L'introduction des réseaux de Petri continus étendus nous a permis de développer une nouvelle sémantique originale. Celle-ci avait pour objectif d'abstraire le comportement discret des réseaux de Petri discrets étendus dans la perspective d'obtenir de nouveaux résultats de décidabilité, résumés dans le tableau \ref{tab:contributions}. Les cellules bleues sont les nouveaux résultats, les textes en rouge des conjectures ; le reste est établi.
 
-Toutefois, nous avons montré dans le théorème \ref{theorem:inh-petri-minsky-equivalence} que le problème d'accessibilité dans les réseaux continus à arcs inhibiteurs demeure indécidable. En effet, ceux-ci sont en réalité équivalents à des machines de Minsky, un modèle de calcul ayant une puissance équivalente aux machines de Turing. Pour ce faire, nous avons trouvé une construction de réseaux continus qui permette de simuler uniquement des séquences de tirs discrets et ainsi de simuler ces machines dont le comportement est également discret. Par conséquent, nous avons créé un lien entre le problème de l'arrêt de ces dernières et l'accessibilité de nos réseaux : elle est ainsi indécidable.
+\begin{table}[h]
+    \centering
+    \setlength{\tabcolsep}{18pt}
+    \setlength{\arrayrulewidth}{0.5mm}
+    \renewcommand{\arraystretch}{1.75}
+    \rowcolors{2}{gray!40}{gray!20}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Extension d'arcs} & \textbf{RdP Discrets} & \textbf{RdP Continus Étendus}\\
+        \hline
+        $\boldsymbol{\emptyset}$ & $\mathrm{Ackermann-complete}$ & $\mathrm{PTIME}$                                   \\
+        \textbf{Lecture}         & $\mathrm{Ackermann-complete}$ & \color{red} $\mathrm{\mathbf{PTIME}}$              \\
+        \textbf{Inhibiteur}      & Indécidable                   & \cellcolor[HTML]{AAAAFF} \color{white} Indécidable \\
+        \textbf{Reset}           & Indécidable                   & \cellcolor[HTML]{8888FF} \color{white} Indécidable \\
+        \textbf{Transfert}       & Indécidable                   & \color{red} \textbf{Indécidable}                   \\
+        \hline
+    \end{tabular}
+    \caption{Contributions de l'article résumées au sein d'un tableau.}
+    \label{tab:contributions}
+\end{table}
+
+Nous avons montré dans le théorème \ref{theorem:inh-petri-minsky-equivalence} que le problème d'accessibilité dans les réseaux continus à arcs inhibiteurs demeure indécidable. En effet, ceux-ci sont en réalité équivalents à des machines de Minsky, un modèle de calcul ayant une puissance équivalente aux machines de Turing. Pour ce faire, nous avons trouvé une construction de réseaux continus qui permette de simuler uniquement des séquences de tirs discrets et ainsi de simuler ces machines dont le comportement est également discret. Par conséquent, nous avons créé un lien entre le problème de l'arrêt de ces dernières et l'accessibilité de nos réseaux : elle est ainsi indécidable.
 
 Enfin, dans le théorème \ref{theorem:inh-net-reset-net-equivalence}, nous démontrons également l'indécidabilité de l'accessibilité dans les réseaux à arcs de reset. Pour ce faire, nous avons construit un isomorphisme entre les marquages des réseaux continus à arcs inhibiteurs -- dont l'indécidabilité a déjà été prouvée -- et ceux des réseaux continus à arcs de reset. Via cet objet, nous sommes donc parvenus à réduire l'accessibilité des arcs inhibiteurs à celle des arcs de reset, ce qui nous permet de conclure sur notre résultat.
 
 \addcontentsline{toc}{section}{Perspectives}
 \section*{Perspectives}
 
-\textbf{À rédiger.}
+On pourrait penser à renforcer certaines des propriétés des réseaux de Petri continus étendus afin d'obtenir des résultats plus satisfaisants, notamment sur le problème d'accessibilité. À juste titre, il semblerait que l'on puisse décider de ce dernier dans le cas où on limite à 1 le nombre d'arcs inhibiteurs au sein du réseau.
 
 \newpage
 
