@@ -72,7 +72,7 @@
 \setlength{\parskip}{10pt}
 \setmathfont{NewCMMath-Book}
 
-\title{Étude des réseaux de Petri continus\\et extensions structurelles}
+\title{Frontières de décidabilité dans les réseaux\\de Petri continus : extensions structurelles}
 \author{Arthur Barbera}
 \date{Mai 2026}
 
@@ -99,13 +99,15 @@
 \addcontentsline{toc}{section}{Introduction}
 \section*{Introduction}
 
-\textbf{À rédiger.}
+Les réseaux de Petri constituent un modèle de calcul discret largement étudié par la communauté scientifique introduit par Carl Adam Petri en 1962. Ceux-ci permettent, en s'appuyant sur un graphe biparti, de modéliser des interactions et échanges d'informations entre des entités appelées places. En particulier, les informations sont représentées par des jetons, les places par des nœuds du graphe et les transferts de jetons se font via l'utilisation de transitions. Le nombre de jetons dans chaque place est transcrit dans un vecteur indexé par ces dernières, que l'on appelle un marquage. Ainsi, ces réseaux sont utilisés en biologie à l'échelle cellulaire, mais aussi et surtout en informatique afin de visualiser des problèmes de programmation concurrentielle, d'automatismes, etc.
 
-% De nombreux articles scientifiques tentent de résoudre ou d'améliorer la complexité du problème d'accessibilité des réseaux de Petri. Celui-ci, qualifié d'Ackermann-complet, se concentre sur la décidabilité du caractère accessible d'un marquage au sein du réseau en partant d'un marquage initial et en tirant de façon successive un ensemble de transitions. Il existe de plus une dérivée des réseaux de Petri permettant d'augmenter leur expressivité. Ceux-ci, sobrement nommés réseaux étendus, adoptent de nouvelles structures d'arcs reposant sur des sémantiques distinctes : lecture, test à 0, reset et transfert de jetons. Dans les trois derniers cas, il est prouvé que l'accessibilité devient indécidable. Afin d'améliorer la complexité de l'accessibilité des réseaux de Petri, une variante continue a été établie et permet d'approximer le comportement de leurs pairs discrets. Ce projet porte ses fruits car il transfère le problème dans la classe $\mathrm{P}$.
+L'analyse de ces réseaux soulève des problèmes de décision fondamentaux tels que la vivacité, la couverture, la réinitialisabilité, ou encore l'accessibilité. Parmi tous ces problèmes dont on trouvera la définition au sein de cet article, nous nous intéressons en particulier à l'accessibilité qui consiste à décider de l'existence d'une séquence de tirs de transitions permettant d'aboutir à un marquage donné à partir d'un marquage initial. Ce dernier a été établi comme $\mathrm{Ackermann-complet}$ par \cite{jleroux} et \cite{cerwinski-orlikowski} en 2022.
 
-% Dans ce document, nous nous intéressons premièrement aux réseaux de Petri discrets classiques. Ce modèle de calcul est utilisé dans divers secteurs de l'informatique : programmation concurrentielle, automatisme, etc. Nous allons définir formellement les concepts clés, énoncer des lemmes et propriétés s'y rattachant puis voir certains résultats aux problèmes les plus importants. Ce type de réseau a vu son expressivité être augmentée via des extensions au niveau des arcs. En effet, certains d'entre eux augmentent l'expressivité du réseau, au détriment de la décidabilité de certains problèmes courants. Enfin, nous nous pencherons sur la dérivée continue des réseaux de Petri servant à approximer le comportement de leurs pairs classiques discrets.
+Une sémantique continue a été développée afin d'approximer le comportement discret des réseaux de Petri classiques, espérant ainsi réduire la complexité des problèmes précédents. Ainsi, il est ici possible d'obtenir des marquages rationnels via des tirs rationnels de transitions, tous deux dans $\mathbb{Q}_+$. En particulier, l'accessibilité est aussi décidable mais en temps polynomial (cf. \cite{fracahaddad}).
 
-% Il est donc pertinent de se demander si l'on peut approximer les réseaux discrets étendus via des séquences de tirs continus. L'objectif de ce document est ainsi de recenser l'ensemble des résultats obtenus via la résolution de problèmes habituels des réseaux de Petri dans la variante continue combinée aux extensions d'arcs.
+Afin d'améliorer l'expressivité de nos réseaux discrets et ainsi de pouvoir les déployer dans davantage de domaines, des extensions d'arcs ont été définies et permettent notamment de connaître le contenu d'une place via des arcs de lecture, de tester qu'une place est vide via des arcs inhibiteurs, de vider tous les jetons d'une place via des arcs de reset, et de transférer la totalité des jetons d'une place à l'autre via des arcs de transfert. Or, le problème d'accessibilité devient indécidable pour les réseaux à arcs inhibiteurs, de reset et de transfert (cf. \cite{dufourd}).
+
+\textbf{Contributions.} Dans cet article, nous introduisons une nouvelle sémantique combinant les extension structurelles avec le domaine continu, que nous nommons les Réseaux de Petri Continus Étendus (CEPN). Notre objectif principal est de tracer la frontière de décidabilité du problème d'accessibilité au sein de ce nouveau modèle.
 
 \newpage
 
@@ -349,7 +351,7 @@ Comme annoncé, ces nouveaux arcs augmentent fortement l'expressivité des rése
 
 Dès lors, de nombreuses de leurs propriétés passent de décidable à indécidable. Nous nous penchons en particulier sur l'accessibilité qui se trouve être décidable avec une complexité d'Ackermann (fonction prenant la forme d'une tour d'exponentielles) dans les réseaux classiques, tandis qu'elle devient indécidable dans les réseaux étendus. L'accessibilité d'un marquage dans un réseau de Petri étendu donné est donc équivalente à déterminer l'acceptation d'une configuration par une machine de Turing et, par extension, son arrêt.
 
-\begin{corollary}
+\begin{corollary}[\text{\autocite[Théorème 11]{dufourd}}]
     Le problème d'accessibilité dans les réseaux de Petri à arcs inhibiteurs est indécidable.
 \end{corollary}
 
@@ -365,7 +367,7 @@ Le lien avec l'accessibilité pour les arcs restants (reset et transfert) est pl
 
 Ce lemme est donc fondateur du théorème qui suit, puisqu'il permet d'assurer que le fonctionnement entre $\mathcal{N}$ et $\mathcal{N}^+$ est le même jusqu'à ce qu'un tir de reset soit effectué dans ce dernier, ce qui crée d'ailleurs un déséquilibre permanent entre deux places jumelles $p$ et $p'$. Ainsi :
 
-\begin{theorem}[\text{\autocite[Theorem 11]{dufourd}}]
+\begin{theorem}[\text{\autocite[Théorème 11]{dufourd}}]
     L'accessibilité est indécidable pour les graphes de reset et de transfert ayant 2 arcs étendus.
 \end{theorem}
 
@@ -640,6 +642,7 @@ Notre objectif est désormais de démontrer le lemme \ref{lemma:sequence-unwrap-
 Enfin, le théorème suivant appuie l'équivalence entre notre réseau et notre machine de Minsky. La condition suffisante est prouvée par récurrence en la longueur des exécutions de $\mathcal{M}$. En revanche, la condition nécessaire est prouvée directement en nous appuyant sur les lemmes \ref{lemma:continuous-to-discrete-sequence} et \ref{lemma:sequence-unwrap-to-execution}, qui permettent d'aboutir élégamment au résultat tant recherché.
 
 \begin{theorem}
+    \label{theorem:inh-petri-minsky-equivalence}
     Soit $\rho_{\omega_n} = (q_n, i_{\omega_n}, j_{\omega_n}) \in C_{\mathcal{M}}$ une configuration avec $n \leq m$ et $i_{\omega_n}, j_{\omega_n} \in \mathbb{N}$. Alors
     \[\rho_{\omega_n} \in \reach{M}{\rho_0} \Longleftrightarrow \Phi(\rho_{\omega_n}) \in \creach{N}{\Phi(\rho_0)}.\]
 \end{theorem}
@@ -856,7 +859,7 @@ Nous avons donc un isomorphisme $\coextend$ entre les marquages de $\mathbb{Q}^P
 Grâce à ce lemme, on prouve dans le théorème suivant que tout marquage $m$ est accessible dans $\mathcal{N}$ si et seulement si son équivalent $\coextend[m]$ l'est également dans $\mathcal{N}^+$ via la même séquence de tirs.
 
 \begin{theorem}
-    \label{theorem:net-equivalence}
+    \label{theorem:inh-net-reset-net-equivalence}
     Soient : \begin{itemize}
         \item $(m, m^+) \in \mathbb{Q}_+^P \times \extend[\mathbb{Q}_+^P]$ des marquages tels que $m^+ = \coextend[m]$.
         \item $\sigma_n \in T^n$ une séquence de tirs de longueur $n \in \mathbb{N}$.
@@ -887,17 +890,26 @@ Grâce à ce lemme, on prouve dans le théorème suivant que tout marquage $m$ e
 Enfin, on peut directement en déduire le corollaire fondamental qui nous permet de conclure sur le résultat de décidabilité du problème d'accessibilité dans les réseaux de Petri à arcs de reset.
 
 \begin{corollary}
-    Le problème de l'accessibilité dans les réseaux de Petri à arcs de reset est indécidable.
+    Le problème de l'accessibilité dans les réseaux de Petri continus à arcs de reset est indécidable.
 \end{corollary}
 
 \begin{proof}
-    On réduit donc le problème de l'accessibilité des réseaux à arcs de reset aux réseaux à arcs inhibiteurs. Le théorème \ref{theorem:net-equivalence} nous a permis de prouver que notre construction peut simuler de manière équivalente les arcs inhibiteurs à partir d'arcs de reset. Or, comme le problème est indécidable pour les réseaux à arcs inhibiteurs, il est également indécidable dans les réseaux à arcs de reset.
+    On réduit donc le problème de l'accessibilité des réseaux à arcs de reset aux réseaux à arcs inhibiteurs. Le théorème \ref{theorem:inh-net-reset-net-equivalence} nous a permis de prouver que notre construction peut simuler de manière équivalente les arcs inhibiteurs à partir d'arcs de reset. Or, comme le problème est indécidable pour les réseaux à arcs inhibiteurs, il est également indécidable dans les réseaux à arcs de reset.
 \end{proof}
 
 \newpage
 
-\addcontentsline{toc}{section}{Conclusions et perspectives}
-\section*{Conclusions et perspectives}
+\addcontentsline{toc}{section}{Conclusions}
+\section*{Conclusions}
+
+L'introduction des réseaux de Petri continus étendus nous a permis de développer une nouvelle sémantique originale. Celle-ci avait pour objectif d'abstraire le comportement discret des réseaux de Petri discrets étendus dans la perspective d'obtenir de nouveaux résultats de décidabilité.
+
+Toutefois, nous avons montré dans le théorème \ref{theorem:inh-petri-minsky-equivalence} que le problème d'accessibilité dans les réseaux continus à arcs inhibiteurs demeure indécidable. En effet, ceux-ci sont en réalité équivalents à des machines de Minsky, un modèle de calcul ayant une puissance équivalente aux machines de Turing. Pour ce faire, nous avons trouvé une construction de réseaux continus qui permette de simuler uniquement des séquences de tirs discrets et ainsi de simuler ces machines dont le comportement est également discret. Par conséquent, nous avons créé un lien entre le problème de l'arrêt de ces dernières et l'accessibilité de nos réseaux : elle est ainsi indécidable.
+
+Enfin, dans le théorème \ref{theorem:inh-net-reset-net-equivalence}, nous démontrons également l'indécidabilité de l'accessibilité dans les réseaux à arcs de reset. Pour ce faire, nous avons construit un isomorphisme entre les marquages des réseaux continus à arcs inhibiteurs -- dont l'indécidabilité a déjà été prouvée -- et ceux des réseaux continus à arcs de reset. Via cet objet, nous sommes donc parvenus à réduire l'accessibilité des arcs inhibiteurs à celle des arcs de reset, ce qui nous permet de conclure sur notre résultat.
+
+\addcontentsline{toc}{section}{Perspectives}
+\section*{Perspectives}
 
 \textbf{À rédiger.}
 
