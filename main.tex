@@ -113,7 +113,7 @@ Afin d'améliorer l'expressivité de nos réseaux discrets et ainsi de pouvoir l
 
 \textbf{Contributions.} Dans cet article, nous introduisons une nouvelle sémantique combinant les extensions structurelles avec le domaine continu, que nous nommons les Réseaux de Petri Continus Étendus (CEPN). Notre objectif principal est de tracer la frontière de décidabilité du problème d'accessibilité au sein de ce nouveau modèle, comme résumé avec les cases rouges dans le tableau ci-dessous.
 
-\begin{table}[h]
+\begin{table}[ht]
     \centering
     \setlength{\tabcolsep}{18pt}
     \setlength{\arrayrulewidth}{0.5mm}
@@ -142,14 +142,17 @@ Les réseaux de Petri constituent un modèle de calcul fortement visuel. Nous co
 
 \subsection{Réseaux discrets}
 
-Les réseaux de Petri, de manière générale, évoquent une sémantique discrète sur un graphe biparti entre un ensemble de places et de transitions, reliés par des arcs lestés. Considérons le réseau de la figure \ref{fig:petri-net-example}.
-\begin{figure}[h]
+Les réseaux de Petri, de manière générale, évoquent une sémantique discrète sur un graphe biparti entre un ensemble de places et de transitions, reliés par des arcs lestés.
+
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.5\linewidth]{img/petri-net-example.png}
     \caption{Exemple de réseau de Petri.}
     \label{fig:petri-net-example}
 \end{figure}
-Nous identifions : \begin{itemize}
+
+\noindent
+Considérons le réseau de la figure \ref{fig:petri-net-example}. Nous identifions : \begin{itemize}
     \item Les places par les cercles \color{blue} bleus\color{black}, généralement dans un ensemble $P$.
     \item Les transitions par les barres \color{red} rouges\color{black}, généralement dans un ensemble $T$.
     \item Les arcs en \color{green} vert\color{black}, faisant toujours la liaison entre une place et une transition.
@@ -204,20 +207,55 @@ Nous considérons parfois des séquences de tirs arbitrairement longues, c'est p
     Soit $\mathbb{A}$ un ensemble. On note \[\mathbb{A}^* := \bigcup_{n \in \mathbb{N}} \mathbb{A}^n\] les tuples arbitrairement grands de $\mathbb{A}$.
 \end{notation}
 
-% \begin{notation}
-%     Soit $u \in \mathbb{A}^I$ un vecteur d'éléments de $\mathbb{A}$ indexé par $I$. On note $[\![u]\!]$ le support de $u$, défini par \[[\![u]\!] := \{x \in I \mid u(x) > 0\}.\]
-% \end{notation}
+\subsubsection{Problème d'accessibilité : VASS et réseaux de Petri}
 
-Il existe, au sein des réseaux de Petri, une large variété de problèmes. Parmi eux, l'\textit{accessibilité}, que constitue la construction de $\reach{N}{m_0}$, est un premier problème algorithmique important. Pour ce faire, nous construisons un \textit{graphe d'accessibilité} des marquages où chaque nœud représente un marquage et chaque arc liant deux nœuds $m_1, m_2$ est labellisé par une transition, signifiant que cette dernière a été tirée depuis le marquage $m_1$ et a débouché sur $m_2$. De cette façon, nous savons non seulement quels marquages sont dans $\reach{N}{m_0}$, mais nous connaissons en plus la ou les séquence(s) de tir(s) à effectuer pour y parvenir. Or, ce graphe pourrait bien être infini. En effet, considérons le graphe d'accessibilité de la figure \ref{fig:accessibility-graph}.
+Il existe, au sein des réseaux de Petri, une large variété de problèmes. Parmi eux, l'\textit{accessibilité}, que constitue la construction de $\reach{N}{m_0}$, est un premier problème algorithmique important. En réalité, il a été démontré que le problème d'accessibilité est décidable. Pour ce faire, un autre modèle de calcul, les \textit{Vector Addition Systems with States} (VASS), été étudié. Ce dernier est équivalent aux réseaux de Petri, reposant sur une machine à états, et à $d \geq 1$ compteurs encodés dans un vecteur de $\mathbb{N}^d$ sur lesquels on peut interagir via un ensemble de transitions. Celles-ci permettent non seulement de faire varier la valeur desdits compteurs via un vecteur de $\mathbb{Z}^d$, mais aussi de changer d'état.
 
-\begin{figure}[h]
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/vass-example.png}
+    \caption{Example de VASS (par Michael Blondin - \href{https://creativecommons.org/licenses/by-sa/4.0/}{© CC BY-SA 4.0}).}
+    \label{fig:vass-example}
+\end{figure}
+
+Considérons le VASS de la figure \ref{fig:vass-example}. Comme on peut l'observer, ce dernier dispose d'un ensemble de 2 états $Q = \{p, q\}$ dont $p$ est l'initial (identifiable par l'arc entrant dans $p$ sans origine) et d'un ensemble de 4 transitions $T = \{(p, (2, 2), p), (p, (-5, -5), q), \cdots\} \subseteq Q \times \mathbb{Z}^2 \times Q$ qui peuvent modifier les valeurs des compteurs au nombre de 2 : on peut le remarquer grâce à la dimension des vecteurs liés à chaque transition.
+
+Supposons que notre configuration initiale est $q(0, 0)$, c'est-à-dire que nous sommes initialement dans l'état $q$ avec des compteurs nuls. On dit alors que la configuration $p(2, 2)$ est \textit{accessible} car l'exécution simple de la transition $p(2, 2)p \in T$ permet d'obtenir le résultat recherché en conservant des valeurs positives pour les compteurs, contrairement à $q(0, 0)$ qui ne dispose d'aucune exécution de la sorte.
+
+\begin{definition}
+    Soit $d \geq 1$. Un $d$-VASS est un graphe orienté $(Q, T)$ tel que : \begin{itemize}
+        \item $Q$ est un ensemble fini d'états.
+        \item $T \subseteq Q \times \mathbb{Z}^d \times Q$ est un ensemble fini de transitions.
+    \end{itemize}
+    Les \textit{configurations} sont des éléments de $Q \times \mathbb{N}^d$ qui permettent de prendre connaissance de l'état courant du VASS et de la valeur des compteurs. Soit $(p, u)$ une telle configuration du $d$-VASS. Alors la configuration $(q, u + v)$ est dite \textit{accessible} en une transition si $(p, v, q) \in T$ et $(u + v) \in \mathbb{N}^d$.
+\end{definition}
+
+On peut ainsi simuler un réseau de Petri en jouant sur les compteurs du VASS associé (qui simule les places), et des transitions qui, par paire (l'une pour soustraire les jetons ; l'autre pour en ajouter), peuvent simuler la relation de flots de nos réseaux ; une simulation analogue se fait également dans le sens inverse. Le problème d'accessibilité persiste ainsi également dans les VASS et est donc parfaitement équivalent au même problème dans nos réseaux de Petri. On a de plus le théorème \ref{theorem:vass-ackermann-complete}, qui nous permet de conclure dans le corollaire \ref{corollary:petri-net-ackermann-complete} sur la décidabilité de l'accessibilité au sein des réseaux de Petri.
+
+\begin{theorem}[\text{\autocite[Corollaire 2]{cerwinski-orlikowski}}]
+    \label{theorem:vass-ackermann-complete}
+    Le problème d'accessibilité dans les VASS est $\mathrm{Ackermann-complete}$.
+\end{theorem}
+
+\begin{corollary}
+    \label{corollary:petri-net-ackermann-complete}
+    Le problème d'accessibilité dans les réseaux de Petri est $\mathrm{Ackermann-complete}$.
+\end{corollary}
+
+\begin{proof}
+    Comme les réseaux de Petri sont équivalents aux VASS et que l'accessibilité a été classée $\mathrm{Ackermann-complete}$ dans ces derniers par le théorème \ref{theorem:vass-ackermann-complete}, alors il en va de même pour nos réseaux.
+\end{proof}
+
+La preuve du théorème \ref{theorem:vass-ackermann-complete} étant complexe, nous allons tenter une seconde approche plus simple qui nous permet de résoudre l'accessibilité des réseaux de Petri sous certaines conditions. En effet, nous construisons un \textit{graphe d'accessibilité} des marquages où chaque nœud représente un marquage et chaque arc liant deux nœuds $m_1, m_2$ est labellisé par une transition, signifiant que cette dernière a été tirée depuis le marquage $m_1$ et a débouché sur $m_2$. De cette façon, nous savons non seulement quels marquages sont dans $\reach{N}{m_0}$, mais nous connaissons en plus la ou les séquence(s) de tir(s) à effectuer pour y parvenir. Or, ce graphe pourrait bien être infini.
+
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.7\linewidth]{img/accessibility-graph.png}
     \caption{Graphe d'accessibilité (à droite) d'un réseau de Petri (à gauche).}
     \label{fig:accessibility-graph}
 \end{figure}
 
-Il apparaît clairement que l'on peut tirer indéfiniment la transition $t_1$ puisqu'elle ne dispose d'aucun arc entrant, donc aucune précondition. Ainsi, $p_1$ peut contenir un nombre arbitrairement grand de jetons et, par conséquent, le graphe est de taille infinie.
+Considérons le graphe d'accessibilité de la figure \ref{fig:accessibility-graph}. Il apparaît clairement que l'on peut tirer indéfiniment la transition $t_1$ puisqu'elle ne dispose d'aucun arc entrant, donc aucune précondition. Ainsi, $p_1$ peut contenir un nombre arbitrairement grand de jetons et, par conséquent, le graphe est de taille infinie.
 
 \subsubsection{Problème de $k$-borne}
 
@@ -327,7 +365,7 @@ Cette dernière définition nous permet immédiatement d'en déduire une dépend
 \end{notation}
 
 \begin{lemma}
-    S'il existe $\mathcal{F} = \{f_1, \cdots, f_n\}$ une base de composantes conservatives de $\mathcal{N}$ telle que $\bigcup_{i = 1}^n [\![f_i]\!] = P$, alors $\mathcal{N}$ est $k$-bornée.
+    S'il existe $\mathcal{F} = \{f_1, \cdots, f_n\}$ une famille de composantes conservatives de $\mathcal{N}$ telle que $\bigcup_{i = 1}^n [\![f_i]\!] = P$, alors $\mathcal{N}$ est $k$-bornée.
 \end{lemma}
 
 \begin{proof}
@@ -398,6 +436,17 @@ Il existe également une dernière extension des réseaux de Petri qui n'augment
 
 Comme nous le savons, il est impossible de déterminer l'arrêt d'une machine de Turing. Cette propriété est fondamentale pour les paragraphes qui suivent. En effet, il existe un autre type d'automate nommé les machines de Minsky (cf. \cite{sapir}) dont le pouvoir expressif est équivalent à celui des machines de Turing.
 
+Ces dernières reposent sur un ensemble d'états, de deux compteurs positifs, et d'un ensemble de transitions labellisées permettant de passer d'un état à un autre en modifiant les compteurs. Plus particulièrement, les opérations possibles sur chaque compteur sont l'\textit{incrémentation} et la \textit{décrémentation} précédée d'un \textit{test à 0}. On démarre d'une configuration initiale $(q, c_1, c_2) \in Q \times \mathbb{N}^2$ où $q$ est l'état initial et $c_1, c_2$ sont les valeurs des compteurs.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.4\linewidth]{img/minsky-machine-example.png}
+    \caption{Exemple d'une machine de Minsky réalisant un test de parité sur le compteur $c_1$.}
+    \label{fig:minsky-machine-example}
+\end{figure}
+
+Considérons la machine de Minsky de la figure \ref{fig:minsky-machine-example}. Celle-ci dispose de d'un ensemble à 4 états $Q = \{P, I, R_P, R_I\}$ dont $P$ est l'initial, et d'un ensemble de 4 transitions dont 2 alternent successivement entre $P$ (pair) et $I$ (impair) en décrémentant le compteur $c_1$. Lorsque celui-ci atteint 0, on obtient donc le résultat de parité de ce dernier, soit par $R_P$ (résultat pair), soit par $R_I$ (résultat impair).
+
 \begin{definition}
     Une machine de Minsky est un quintuplet $\mathcal{M} := (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$, où $Q_{\mathcal{M}}$ est l'ensemble d'états, $T_{\mathcal{M}}$ est l'ensemble des transitions, $c_1, c_2 \in \mathbb{N}$ des compteurs, $\rho_0$ est la configuration initiale. De plus, les configurations de $\mathcal{M}$ ont la forme $(q, i, j) \in C_{\mathcal{M}} := Q_{\mathcal{M}} \times \mathbb{N}^2$.
 \end{definition}
@@ -457,7 +506,7 @@ En effet, une construction similaire pour les arcs de transfert peut être réal
 
 La variante continue des réseaux de Petri offre de nouvelles sémantiques de fonctionnement. Dans ce modèle, les transitions peuvent être tirées un nombre rationnel de fois, ce qui implique que les places peuvent contenir des fractions de jetons. Cette continuité permet d'approximer les réseaux discrets, et certains résultats de décidabilité et/ou de complexité aux problèmes précédemment rencontrés sont encore différents.
 
-À l'instar des réseaux discrets, nous commencerons par énoncer un ensemble de définitions qui nous permettront de cerner ce modèle de calcul différent, bien que similaire. Ensuite, nous nous pencherons à nouveau sur le problème d'accessibilité dans les réseaux continus (notamment en s'appuyant sur les résultats de \cite{tocl}), puis nous leur adapterons les extensions précédemment découvertes. Nous chercherons ainsi à conclure sur le caractère (in)décidable dans ces dernières variantes.
+À l'instar des réseaux discrets, nous commencerons par énoncer un ensemble de définitions qui nous permettront de cerner ce modèle de calcul différent, bien que similaire. Ensuite, nous nous pencherons à nouveau sur le problème d'accessibilité dans les réseaux continus (notamment en s'appuyant sur les résultats de \cite{fracahaddad}), puis nous leur adapterons les extensions précédemment découvertes. Nous chercherons ainsi à conclure sur le caractère (in)décidable dans ces dernières variantes.
 
 Dans les paragraphes suivants, on pose $\mathcal{N}$ un réseau de Petri continu défini par $\mathcal{N} := (P, T, F, m_0)$. En particulier, tout marquage $m$ de ce dernier est un vecteur de nombre rationnels positifs indexé par les places du réseau : $m \in \mathbb{Q}_+^P$.
 
@@ -508,7 +557,7 @@ Nous nous inspirons de \cite{almagor_et_al} qui ont eu l'idée fondatrice dans l
 
 Nous allons nous inspirer de cette construction pour nos CEPNs afin de simuler des machines de Minsky. En effet, on souhaite construire un réseau continu à arcs inhibiteurs $\overline{\mathcal{N}}$ tel que tout passage de $p$ à $q$ dans $\mathcal{N}$ se fasse de manière discrète. De cette façon, on réduira le problème d'accessibilité de la variante continue étendue au problème de l'arrêt d'une machine de Minsky, dont l'exécution est séquentielle.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.85\linewidth]{img/minsky-machine-to-petri-net.png}
     \caption{Machine de Minsky implémentée en un réseau de Petri.}
@@ -531,7 +580,7 @@ Cette construction pourrait fonctionner dans les réseaux discrets, comme on peu
 
 Posons donc $\overline{\mathcal{N}} := (\overline{P}, \overline{T}, \overline{F}, \overline{m_0})$ le réseau de Petri continu qui simule des tirs discrets. L'idée est la suivante : on segmente chaque transition du réseau originel en un "sous-réseau" dans le réseau continu qui va forcer l'utilisation de tirs discrets. Basons-nous sur le réseau de la figure \ref{fig:petri-net}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.45\linewidth]{img/petri-net.png}
     \caption{Réseau de Petri discret.}
@@ -542,7 +591,7 @@ Chaque sous-réseau de $\overline{\mathcal{N}}$ se base sur deux triplets $(q, r
 
 Plus précisément, cet échange s'effectue en deux temps via $ref, \overline{ref}$ qui réceptionnent puis leur transfèrent leur contenu via les transitions $ref(q), \overline{ref(q)}$. Le choix de la place porteuse initiale du jeton entre $q$ et $\overline{q}$ est entièrement arbitraire. Supposons donc que $q$ a été choisie.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.75\linewidth]{img/continuous-petri-net.png}
     \caption{Réseau de Petri continu discrétisé de la figure \ref{fig:petri-net}.}
@@ -991,7 +1040,7 @@ Enfin, on peut directement en déduire le corollaire fondamental qui nous permet
 
 L'introduction des réseaux de Petri continus étendus nous a permis de développer une nouvelle sémantique originale. Celle-ci avait pour objectif d'abstraire le comportement discret des réseaux de Petri discrets étendus dans la perspective d'obtenir de nouveaux résultats de décidabilité, résumés dans le tableau \ref{tab:contributions}. Les cellules bleues sont les nouveaux résultats, les textes en rouge des conjectures ; le reste est établi.
 
-\begin{table}[h]
+\begin{table}[ht]
     \centering
     \setlength{\tabcolsep}{18pt}
     \setlength{\arrayrulewidth}{0.5mm}
@@ -1022,7 +1071,11 @@ Enfin, nous concluons dans le corollaire \ref{corollary:reset-cepn-undecidable} 
 
 \subsection{Problème de couverture}
 
-\textbf{À rédiger.}
+Nous nous sommes intéressés à une variante puissante des réseaux de Petri, étant donnés que nos CEPNs à arcs inhibiteurs sont aussi performants que des machines de Minsky Turing-complètes. Puisque le problème d'accessibilité est trop difficile d'après nos résultats, la suite logique des évènements est de s'intéresser à un problème plus simple comme celui de la couverture.
+
+Celui-ci consiste à trouver, pour tout marquage $m \in \creach{N}{m_0}$, un marquage $m' \in \creach{N}{m_0}$ tel que $m' \geq m$, indépendamment de la séquence de transitions choisie. \cite{dufourd} a déjà montré dans sa thèse que ce problème est décidable pour les réseaux de Petri discrets étendus par des arcs de reset et de transfert. En s'appuyant sur un algorithme prenant en entrée un marquage $m$, ce dernier donne en sortie un ensemble $K$ de marquages initiaux à partir desquels il est possible de couvrir $m$.
+
+Il serait donc intéressant de considérer ce problème dans la variante continue à arcs de reset, en essayant par exemple de construire un algorithme au fonctionnement similaire. Un quelconque résultat obtenu serait d'ailleurs applicable aux réseaux à arcs inhibiteurs en réutilisant la construction précédente, et potentiellement aux arcs de transfert.
 
 \subsection{CEPN à 1 arc inhibiteur}
 
@@ -1035,7 +1088,7 @@ En effet, reprenons les conditions de sensibilisation d'une transition émis par
 \end{itemize}
 Alors il existe une séquence finie $\sigma \in (\mathbb{Q}_+ \times T)^*$ telle que $m_0 \creaches[\sigma] m$ et $\pi(\sigma) = v$, où $\pi(\sigma)$ est l'image de Parikh de $\sigma$.
 
-Cette définition permet, indépendamment de l'ordre, de savoir si l'on peut construire une séquence de tirs $\sigma$ parmi les transitions de $[\![v]\!]$ et ainsi accéder au marquage $m$. Supposons maintenant que $\mathcal{N}$ est un CEPN par un unique arc de test à 0. Cela implique qu'il existe une place $p_0 \in P$ et une transition $t_0 \in T$ tels que $\inhibitor(p_0, t_0) = 1$. Par conséquent, nous remplaçons les ensembles $\preb{[\![v]\!]}, \postb{[\![v]\!]}$ respectivement par $\preb{[\![v]\!]} \setminus \{p_0\}, \postb{[\![v]\!]} \setminus \{p_0\}$.
+Cette définition permet, indépendamment de l'ordre, de savoir si l'on peut construire une séquence de tirs $\sigma$ parmi les transitions de $[\![v]\!]$ et ainsi accéder au marquage $m$. Il serait intéressant d'adapter ce lemme à nos CEPNs ayant un unique arc de test à 0 : cela implique qu'il existe une place $p_0 \in P$ et une transition $t_0 \in T$ tels que $\inhibitor(p_0, t_0) = 1$. Par conséquent, on pourrait remplacer les ensembles $\preb{[\![v]\!]}, \postb{[\![v]\!]}$ respectivement par $\preb{[\![v]\!]} \setminus \{p_0\}, \postb{[\![v]\!]} \setminus \{p_0\}$. Il faudrait également ajouter une condition qui assure qu'une transition inhibitrice a été tirée : $\exists t \in \supp{v},\ \inhibitor(p_0, t) = 1$.
 
 \newpage
 
