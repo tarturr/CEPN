@@ -504,7 +504,22 @@ En effet, une construction similaire pour les arcs de transfert peut être réal
 
 \subsection{Réseaux continus}
 
-La variante continue des réseaux de Petri offre de nouvelles sémantiques de fonctionnement. Dans ce modèle, les transitions peuvent être tirées un nombre rationnel de fois, ce qui implique que les places peuvent contenir des fractions de jetons. Cette continuité permet d'approximer les réseaux discrets, et certains résultats de décidabilité et/ou de complexité aux problèmes précédemment rencontrés sont encore différents.
+La variante continue des réseaux de Petri offre de nouvelles sémantiques de fonctionnement. Dans ce modèle, les transitions peuvent être tirées un nombre rationnel de fois, ce qui implique que les places peuvent contenir des fractions de jetons. Cette continuité permet d'approximer les réseaux discrets, et certains résultats de décidabilité et/ou de complexité aux problèmes précédemment rencontrés sont encore différents. En particulier, l'accessibilité continue n'est pas triviale en prenant en compte les résultats discrets.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/continuous-reachability.png}
+    \caption{Accessibilité : Discret VS. Continu. }
+    \label{fig:continuous-reachability}
+\end{figure}
+
+Considérons le réseau de la figure \ref{fig:continuous-reachability}, avec le marquage initial $m_0  := (1, 0)$. Il est évident que l'ensemble des marquages accessibles discrets est $\reach{N}{m_0} = \{m_0\}$ : en effet, $t$ ne peut être tirée car $F(p_1, t) = 2$, or $m_0(p_1) = 1$ seulement. En revanche, dans la variante continue, on peut donc tirer $t$ avec un facteur rationnel, comme $\frac{1}{2}$ : les préconditions ne s'élèvent alors plus qu'à $2 \times \frac{1}{2} = 1$ jeton requis dans $p_1$. De manière plus détaillée, on a l'équation caractéristique :
+\begin{align*}
+    m_1 & := m_0 + \frac{1}{2}.\incid(t) \\
+        & = \begin{pmatrix}1 \\ 0\end{pmatrix} + \frac{1}{2}\begin{pmatrix}-2 \\ 1\end{pmatrix} \\
+        & = \begin{pmatrix}0 \\ 1/2\end{pmatrix}.
+\end{align*}
+On en déduit donc que l'ensemble des marquages accessibles continus du réseau se résume à l'ensemble : \[\creach{N}{m_0} := \{(1 - 2q, q) : 0 \leq q \leq \frac{1}{2}\} \supset \reach{N}{m_0}.\]
 
 À l'instar des réseaux discrets, nous commencerons par énoncer un ensemble de définitions qui nous permettront de cerner ce modèle de calcul différent, bien que similaire. Ensuite, nous nous pencherons à nouveau sur le problème d'accessibilité dans les réseaux continus (notamment en s'appuyant sur les résultats de \cite{fracahaddad}), puis nous leur adapterons les extensions précédemment découvertes. Nous chercherons ainsi à conclure sur le caractère (in)décidable dans ces dernières variantes.
 
