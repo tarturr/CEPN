@@ -376,11 +376,20 @@ La résolution du système $\incid^t(f) = 0$ entraîne l'apparition d'une base d
 
 \subsection{Extensions d'arcs}
 
-Les réseaux de Petri ainsi construits ont un ensemble de propriétés intéressantes permettant de visualiser un système concurrentiel, des rendez-vous, etc. Cependant, leur expressivité est ainsi trop limitée pour des problèmes complexes. Cette dernière peut être améliorée grâce à des extensions fonctionnelles au niveau du fonctionnement des arcs, au détriment de la décidabilité de certaines propriétés des réseaux de Petri classiques.
+Les réseaux de Petri ainsi construits ont un ensemble de propriétés intéressantes permettant de visualiser un système concurrentiel, des rendez-vous, etc. Cependant, leur expressivité est ainsi trop limitée pour des problèmes complexes. Cette dernière peut être améliorée grâce à des extensions fonctionnelles au niveau du fonctionnement des arcs, au détriment de la décidabilité de certaines propriétés des réseaux de Petri classiques. Nous allons donc les mettre en avant en exposant, pour chacune d'entre elles, une définition formelle en fin de section.
 
-\subsubsection{Définitions}
+\subsubsection{Arcs inhibiteurs}
 
-Premièrement, nous reprenons la notion d'arcs inhibiteurs. Ceux-ci permettent d'effectuer un test à 0 sur une place donnée ; ainsi, un arc inhibiteur $(p, t) \in P \times T$ garantit que, lors du tir de $t$ dans un marquage $m$, on a $m(p) = 0$. Nous définissons ce type d'arc via le paragraphe suivant.
+Premièrement, nous reprenons la notion d'arcs inhibiteurs. Ceux-ci permettent d'effectuer un test à 0 sur une place donnée ; ainsi, un arc inhibiteur $(p, t) \in P \times T$ garantit que, lors du tir de $t$ dans un marquage $m$, on a $m(p) = 0$.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/inhibitory-petri-net.png}
+    \caption{Réseau de Petri étendu par un arc inhibiteur.}
+    \label{fig:inhibitory-petri-net}
+\end{figure}
+
+Considérons le réseau de la figure \ref{fig:inhibitory-petri-net}, ayant pour marquage initial $m_0 := (0, 0)$. L'arc inhibiteur $(p_1, t_2)$ est identifiable par son extrémité en forme de cercle. Remarquons donc que $t_2$ est sensibilisée : en effet, $m_0(p_1) = 0$, d'où l'on obtient le marquage $m_1 := (0, 1)$ en la tirant. En réalité, $p_2$ peut donc contenir autant de jetons que l'on souhaite, tant que $t_1$ n'est pas tirée : celle-ci va ajouter un jeton dans $p_1$, donc le test à 0 de l'arc inhibiteur $(p_1, t_2)$ n'aboutira pas et empêchera toute future utilisation de $t_2$.
 
 \begin{definition}
     Un réseau de Petri à arcs inhibiteurs est un quintuplet $\mathcal{N} := (P, T, F, \inhibitor, m_0)$ où : \begin{itemize}
@@ -393,7 +402,18 @@ Premièrement, nous reprenons la notion d'arcs inhibiteurs. Ceux-ci permettent d
     \end{itemize}
 \end{definition}
 
+\subsubsection{Arcs de reset}
+
 Deuxièmement, nous reprenons également les arcs de reset. Ces derniers permettent de vider entièrement les jetons d'une place ; ainsi, pour un arc de reset $(p, t) \in P \times T$, le tir de $t$ du marquage $m$ aboutissant au marquage $m'$ garantit que, indépendamment de la valeur de $m(p)$, on obtiendra $m'(p) = 0$.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.4\linewidth]{img/reset-petri-net.png}
+    \caption{Réseau de Petri étendu par un arc de reset.}
+    \label{fig:reset-petri-net}
+\end{figure}
+
+Considérons le réseau de la figure \ref{fig:reset-petri-net}, ayant pour marquage initial $m_0 := (1, 0)$. L'arc de reset $(p_1, t_1)$ est identifiable par la présence de la croix et l'absence de flèche en bout d'arc. En effet, il est inutile d'imposer une direction à cet arc puisque ce dernier est destiné à vider $p_1$ ; on n'aura donc pas d'arc retour $(t_1, p_1)$. À l'instar du réseau à arcs inhibiteurs de la figure \ref{fig:inhibitory-petri-net}, la transition $t_2$ peut être tirée autant de fois que souhaité, jusqu'à ce que l'on utilise $t_1$ qui vide $p_1$ de son jeton. Dans un tel cas, les préconditions de $t_2$ ne sont plus remplies, car on aurait un marquage de la forme $m' := (0, *)$, or $F(p_1, t_2) = 1$.
 
 \begin{definition}
     Un réseau de Petri à arcs de reset est un quintuplet $\mathcal{N} := (P, T, F, \reset, m_0)$ où : \begin{itemize}
@@ -416,6 +436,8 @@ Deuxièmement, nous reprenons également les arcs de reset. Ces derniers permett
     En effet, par abus de notation, on notera que $p = m(p)$ dans le cadre d'une équation caractéristique.
 \end{remark}
 
+\subsubsection{Arcs restants}
+
 Enfin, nous terminons par les arcs de transfert qui permettent, comme leur nom l'indique, de transférer tous les jetons d'une place à une autre. En effet, pour une paire d'arcs de transfert $(p, t), (t, p') \in P \times T$, le tir de $t$ du marquage $m$ aboutissant à $m'$ garantit que $m'(p) = 0$ et $m'(q) = m(p)$.
 
 \begin{definition}
@@ -436,7 +458,7 @@ Il existe également une dernière extension des réseaux de Petri qui n'augment
 
 Comme nous le savons, il est impossible de déterminer l'arrêt d'une machine de Turing. Cette propriété est fondamentale pour les paragraphes qui suivent. En effet, il existe un autre type d'automate nommé les machines de Minsky (cf. \cite{sapir}) dont le pouvoir expressif est équivalent à celui des machines de Turing.
 
-Ces dernières reposent sur un ensemble d'états, de deux compteurs positifs, et d'un ensemble de transitions labellisées permettant de passer d'un état à un autre en modifiant les compteurs. Plus particulièrement, les opérations possibles sur chaque compteur sont l'\textit{incrémentation} et la \textit{décrémentation} précédée d'un \textit{test à 0}. On démarre d'une configuration initiale $(q, c_1, c_2) \in Q \times \mathbb{N}^2$ où $q$ est l'état initial et $c_1, c_2$ sont les valeurs des compteurs.
+Ces dernières reposent sur un ensemble d'états, de compteurs positifs, et d'un ensemble de transitions labellisées permettant de passer d'un état à un autre en modifiant les compteurs. Plus particulièrement, les opérations possibles sur chaque compteur sont l'\textit{incrémentation} et la \textit{décrémentation} précédée d'un \textit{test à 0}. Dans ce document, nous nous intéressons seulement aux machines à 2 compteurs. Nous démarrons donc d'une configuration initiale $(q, c_1, c_2) \in Q \times \mathbb{N}^2$ où $q$ est l'état initial et $c_1, c_2$ sont les valeurs des compteurs.
 
 \begin{figure}[ht]
     \centering
@@ -455,18 +477,34 @@ Considérons la machine de Minsky de la figure \ref{fig:minsky-machine-example}.
     Soit $\mathcal{M}$ une machine de Minsky. On définit de manière équivalente l'ensemble des configurations accessibles de $\mathcal{M}$ depuis $\rho_0$ en $n \in \mathbb{N}$ transitions labellisées par l'ensemble \[\reach[n]{M}{\rho_0} := \{\rho \in C_{\mathcal{M}} \mid \exists \sigma \in T_{\mathcal{M}}^n,\ \rho_0 \reaches[\sigma] \rho\}\]
 \end{definition}
 
-\begin{theorem}
+Marvin Lee Minsky a démontré lui-même que ses machines à compteurs sont Turing-complètes, comme sourcé dans le théorème ci-dessous. L'idée globale est de simuler une machine de Turing $\mathcal{T}$ en s'appuyant sur une machine de Minsky $\mathcal{M}_{\mathcal{T}}$ à 4 compteurs qui simulent 2 piles. Celles-ci permettent de stocker les valeurs des parties gauche et droite du ruban de $\mathcal{T}$ par rapport à la tête de lecture. Ainsi, un changement de position de la tête correspond à l'action de dépiler l'une des deux piles et d'empiler le dernier élément observé par la tête sur l'autre pile.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\linewidth]{img/turing-band.png}
+    \caption{Construction de $\mathcal{M}_{\mathcal{T}}$ représentant la machine de Turing $\mathcal{T}$.}
+    \label{fig:turing-band}
+\end{figure}
+
+On peut ensuite encoder ces 4 compteurs dans 2 compteurs $c_1, c_2$ à l'aide du produit de nombre premiers $2^w \times 3^x \times 5^y \times 7^z$ dans $c_1$, où la multiplicité algébrique de chaque nombre, en l'occurrence $w, x, y, z \in \mathbb{N}$ représente la valeur du compteur associé. On peut alors multiplier $c_1$ par $2, 3, 5$ ou $7$ pour augmenter le compteur respectif, et faire un test à 0 de l'un d'eux en vérifiant le critère de divisibilité par leur nombre premier représentatif (succession de soustractions). On en déduit donc le résultat d'indécidabilité de l'arrêt de $\mathcal{M}_{\mathcal{T}}$ dans le corollaire \ref{corollary:minsky-machine-stop-undecidable}.
+
+\begin{theorem}[\text{\autocite[Théorème 14.1-1]{minsky1967computation}}]
     \label{theorem:minsky-machine-turing-complete}
-    Les machines de Minsky sont Turing-complètes.
+    Pour toute machine de Turing $\mathcal{T}$, il existe une machine de Minsky à deux compteurs $\mathcal{M}_{\mathcal{T}}$ au même comportement que $\mathcal{T}$.
 \end{theorem}
 
+\begin{corollary}
+    \label{corollary:minsky-machine-stop-undecidable}
+    Le problème de l'arrêt d'une machine de Minsky est indécidable.
+\end{corollary}
+
 \begin{proof}[Démonstration (schéma)]
-    \textbf{À rédiger.} On commencera par simuler une machine de Turing en s'appuyant sur une machine de Minsky avec 4 compteurs qui simulent 2 piles. Puis, on encodera ces derniers dans 2 compteurs à l'aide de produits de nombres premiers dans l'un, où la multiplicité algébrique de chaque nombre représente la valeur du compteur associé. On peut alors multiplier par l'un des nombres pour augmenter son compteur, et faire un test à 0 en vérifiant le critère de divisibilité (succession de soustractions).
+    Soit $\mathcal{T}$ une machine de Turing. Alors par le théorème \ref{theorem:minsky-machine-turing-complete}, il existe une machine de Minsky $\mathcal{M}_{\mathcal{T}}$ simulant $\mathcal{T}$. Il suffit donc de faire une réduction du problème de l'arrêt de $\mathcal{T}$ au problème de l'arrêt de $\mathcal{M}_{\mathcal{T}}$.
 \end{proof}
 
 \subsubsection{Indécidabilité des réseaux à arcs inhibiteurs}
 
-Comme annoncé, ces nouveaux arcs augmentent fortement l'expressivité des réseaux de Petri. En réalité, il est possible de simuler le fonctionnement d'une machine de Minsky depuis un réseau de Petri à arcs inhibiteurs qui permettent le test à 0. Cette fonctionnalité est inexistante de manière déterministe dans les réseaux de Petri classiques. En effet, sur une place $p \in P$, on pourrait par exemple réduire cette vérification à un test à 1 sur un arc $(p, t)$, puis un test à 2 sur un autre arc $(p, t')$ pour le cas "sinon". Or, si $m(p) \geq 2$, alors les deux transitions $t$ et $t'$ sont sensibilisées, ce qui entraîne que l'on peut toujours tirer $t$, c'est-à-dire que le test à 1 est valide. L'arc inhibiteur contraint donc le test à 0 de manière déterministe, élevant alors un tel réseau de Petri au même niveau que les machines de Minsky.
+Comme annoncé, ces nouveaux arcs augmentent fortement l'expressivité des réseaux de Petri. En réalité, il est possible de simuler le fonctionnement d'une machine de Minsky depuis un réseau de Petri à arcs inhibiteurs qui permettent le test à 0. Cette fonctionnalité est inexistante de manière déterministe dans les réseaux de Petri classiques. En effet, sur une place $p \in P$, on pourrait naïvement penser à réduire cette vérification à un test à 1 sur un arc $(p, t)$, puis un test à 2 sur un autre arc $(p, t')$ pour le cas "sinon". Or, si $m(p) \geq 2$, alors les deux transitions $t$ et $t'$ sont sensibilisées, ce qui entraîne que l'on peut toujours tirer $t$, c'est-à-dire que le test à 1 est valide. L'arc inhibiteur contraint donc le test à 0 de manière déterministe, élevant alors un tel réseau de Petri au même niveau que les machines de Minsky.
 
 \begin{corollary}
     Les réseaux de Petri à arcs inhibiteurs sont Turing-complets.
@@ -568,7 +606,7 @@ Dans les réseaux de Petri discrets étendus par des arcs inhibiteurs, de transf
 
 \subsubsection{Motivation principale}
 
-Nous nous inspirons de \cite{almagor_et_al} qui ont eu l'idée fondatrice dans les ($\mathbb{Q}$)VASS ((\textit{Continuous}) \textit{Vector Addition System with States}). En effet, pour $\mathcal{V}$ un $\mathbb{Q}$VASS donné, ils créent un nouveau $\mathbb{Q}$VASS $\mathcal{V}'$ dans lequel, pour toute paire d'états $(p, q)$ de $\mathcal{V}$ telle qu'il existe une transition labellisée de $p$ à $q$, on crée une paire d'états intermédiaires $(r_p, r_q)$ qui nous permet de garantir que les compteurs, après la transition de $p$ à $q$, ne puissent avoir subi qu'une affectation discrète.
+Nous nous inspirons de \cite{almagor_et_al} qui ont eu une idée fondatrice dans les $\mathbb{Q}$VASS (\textit{Continuous} Vector Addition System with States). En effet, pour $\mathcal{V}$ un $\mathbb{Q}$VASS donné, un nouveau $\mathbb{Q}$VASS $\mathcal{V}'$ est créé dans lequel, pour toute paire d'états $(p, q)$ de $\mathcal{V}$ telle qu'il existe une transition labellisée de $p$ à $q$, une paire d'états intermédiaires $(r_p, r_q)$ est ajoutée, ce qui permet de garantir que les compteurs, après la transition de $p$ à $q$, ne puissent avoir subi qu'une affectation discrète.
 
 Nous allons nous inspirer de cette construction pour nos CEPNs afin de simuler des machines de Minsky. En effet, on souhaite construire un réseau continu à arcs inhibiteurs $\overline{\mathcal{N}}$ tel que tout passage de $p$ à $q$ dans $\mathcal{N}$ se fasse de manière discrète. De cette façon, on réduira le problème d'accessibilité de la variante continue étendue au problème de l'arrêt d'une machine de Minsky, dont l'exécution est séquentielle.
 
@@ -597,7 +635,7 @@ Posons donc $\overline{\mathcal{N}} := (\overline{P}, \overline{T}, \overline{F}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.45\linewidth]{img/petri-net.png}
+    \includegraphics[width=0.6\linewidth]{img/petri-net.png}
     \caption{Réseau de Petri discret.}
     \label{fig:petri-net}
 \end{figure}
@@ -852,7 +890,7 @@ Enfin, le théorème suivant appuie l'équivalence entre notre réseau et notre 
 
 \subsection{Arcs de reset}
 
-Dans cette section, nous nous intéressons à l'accessibilité via l'ajout d'arcs de reset à nos réseaux de Petri continus. En réalité, leur implémentation dans cette nouvelle sémantique est naturellement construite en s'appuyant sur les mêmes définitions que dans l'environnement discret, mais en ajoutant les fractions de tirs du côté de la matrice d'incidence seulement. Ainsi, à l'instar des machines de Minsky et des réseaux à arcs inhibiteurs, nous cherchons à simuler des CEPNs à arcs de reset à partir d'arcs inhibiteurs.
+Dans cette section, nous nous intéressons à l'accessibilité via l'ajout d'arcs de reset à nos réseaux de Petri continus. En réalité, leur implémentation dans cette nouvelle sémantique est naturellement construite en s'appuyant sur les mêmes définitions que dans l'environnement discret, mais en ajoutant les fractions de tirs du côté de la matrice d'incidence seulement. Ainsi, à l'instar des machines de Minsky et des réseaux à arcs inhibiteurs, nous cherchons à simuler des CEPNs à arcs inhibiteurs à partir d'arcs de reset.
 
 \subsubsection{D'inhibiteur à reset : construction, définitions, propriétés}
 
@@ -894,14 +932,14 @@ la fonction indicatrice d'inhibition et $\mathbb{I}_{\mathcal{N}} := \indicator_
     \item Pour tout tir $m \creaches[\alpha t] m'$, on redéfinit l'équation caractéristique de la manière suivante : \[m' = m + \alpha.\incid(t) - \reset(t)\]
 \end{enumerate}
 
-La figure \ref{fig:reset-arc-petri-net} nous montre un exemple concret d'une telle construction.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.5\linewidth]{img/reset-arc-petri-net.png}
     \caption{Transformation d'un réseau à arcs inhibiteurs en réseau à arcs de reset par \cite{dufourd}.}
     \label{fig:reset-arc-petri-net}
 \end{figure}
-La relation de flots avec tout arc de $p$ est donc reproduite à l'identique pour $p'$, à l'exception de l'arc inhibiteur dont la liaison avec $p$ est retirée pour la transformer en arc de reset sur $p'$.
+
+La figure \ref{fig:reset-arc-petri-net} nous montre un exemple concret d'une telle construction. La relation de flots avec tout arc de $p$ est donc reproduite à l'identique pour $p'$, à l'exception de l'arc inhibiteur dont la liaison avec $p$ est retirée pour la transformer en arc de reset sur $p'$.
 
 \subsubsection{Équivalence des réseaux par isomorphisme}
 
