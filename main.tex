@@ -502,43 +502,70 @@ On peut ensuite encoder ces 4 compteurs dans 2 compteurs $c_1, c_2$ à l'aide du
     Soit $\mathcal{T}$ une machine de Turing. Alors par le théorème \ref{theorem:minsky-machine-turing-complete}, il existe une machine de Minsky $\mathcal{M}_{\mathcal{T}}$ simulant $\mathcal{T}$. Il suffit donc de faire une réduction du problème de l'arrêt de $\mathcal{T}$ au problème de l'arrêt de $\mathcal{M}_{\mathcal{T}}$.
 \end{proof}
 
-\subsubsection{Indécidabilité des réseaux à arcs inhibiteurs}
+\subsubsection{Accessibilité des réseaux à arcs inhibiteurs}
+\label{section:inhibitory-reachability}
 
-Comme annoncé, ces nouveaux arcs augmentent fortement l'expressivité des réseaux de Petri. En réalité, il est possible de simuler le fonctionnement d'une machine de Minsky depuis un réseau de Petri à arcs inhibiteurs qui permettent le test à 0. Cette fonctionnalité est inexistante de manière déterministe dans les réseaux de Petri classiques. En effet, sur une place $p \in P$, on pourrait naïvement penser à réduire cette vérification à un test à 1 sur un arc $(p, t)$, puis un test à 2 sur un autre arc $(p, t')$ pour le cas "sinon". Or, si $m(p) \geq 2$, alors les deux transitions $t$ et $t'$ sont sensibilisées, ce qui entraîne que l'on peut toujours tirer $t$, c'est-à-dire que le test à 1 est valide. L'arc inhibiteur contraint donc le test à 0 de manière déterministe, élevant alors un tel réseau de Petri au même niveau que les machines de Minsky.
+Comme annoncé, ces nouveaux arcs augmentent fortement l'expressivité des réseaux de Petri. En réalité, il est possible de simuler le fonctionnement d'une machine de Minsky depuis un réseau de Petri à arcs inhibiteurs qui permettent le test à 0. Cette fonctionnalité est inexistante de manière déterministe dans les réseaux de Petri classiques. En effet, sur une place $p \in P$, on pourrait naïvement penser à réduire cette vérification à un test à 1 sur un arc $(p, t)$, puis un test à 2 sur un autre arc $(p, t')$ pour le cas "sinon". Or, si $m(p) \geq 2$, alors les deux transitions $t$ et $t'$ sont sensibilisées : on peut donc toujours tirer $t$, le test à 1 est valide.
+
+L'arc inhibiteur contraint donc le test à 0 de manière déterministe, c'est pourquoi nous cherchons une construction d'un tel réseau de Petri permettant de simuler une machine de Minsky. Nous avons ainsi transformé tout état et tout compteur de $\mathcal{M}$ en une place dans $\mathcal{N}$ ; on reprend également les transitions labellisées de la machine en une transition du réseau. On a alors un unique jeton qui transite dans les places du réseau représentant les états de $\mathcal{M}$, et lorsque nécessaire, les transitions utilisées peuvent faire les tests à 0 sur les compteurs via des arcs inhibiteurs, et incrémenter/décrémenter via les arcs classiques.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.85\linewidth]{img/minsky-machine-to-petri-net.png}
+    \caption{Machine de Minsky $\mathcal{M}$ implémentée en un réseau de Petri $\mathcal{N}$.}
+    \label{fig:minsky-net}
+\end{figure}
+
+Considérons le réseau de la figure \ref{fig:minsky-net} qui permet, depuis $p$, de passer à $p_f$ si $c_i$ est nul via la transition du bas : on l'implémente dans $\mathcal{N}$ avec $t$, qui accomplit précisément cette tâche ; sinon, on passe à $p_t$ en décrémentant $c_i$ via la transition du haut : on l'implémente alors avec $f$.
+
+Plus formellement, afin de simuler l'exécution d'une machine de Minsky $\mathcal{M} = (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$, on pose $P := Q_{\mathcal{M}} \cup \{c_1, c_2\}$ et $T := T_{\mathcal{M}}$. Ensuite, on définit $F$ de la manière suivante ; pour toute transition $t \in T_{\mathcal{M}}$ de $s$ à $s'$ : \begin{itemize}
+    \item Si $t$ est un test à 0 sur $c_i$, alors $F(s, t) = F(t, s') = 1$ et $\inhibitor(c_i, t) = 1$ d'où $F(c_i, t) = F(t, c_i) = 0$.
+    \item Si $t$ décrémente $c_i$ après un test de positivité stricte, alors $F(s, t) = F(t, s') = F(c_i, t) = 1$.
+    \item Si $t$ incrémente $c_i$, alors $F(s, t) = F(t, s') = F(t, c_i) = 1$.
+\end{itemize}
+On encode ensuite toute configuration $(q_k, i, j)$ de $\mathcal{M}$ dans un marquage $m \in \mathbb{N}^{P}$ tel que : \begin{itemize}
+    \item $m(q_k) = 1$ et $\forall l \neq k,\ m(q_l) = 0$.
+    \item $m(c_i) = c_i$ (la valeur du compteur).
+\end{itemize}
+Ainsi, toute machine de Minsky peut être implémentée en un réseau de Petri à arcs inhibiteurs au même comportement. C'est ainsi que l'on obtient le résultat suivant, qui découle directement du théorème \ref{theorem:minsky-machine-turing-complete}.
 
 \begin{corollary}
     Les réseaux de Petri à arcs inhibiteurs sont Turing-complets.
 \end{corollary}
 
-\begin{proof}[Démonstration (schéma)]
-    \textbf{À rédiger.} Tout compteur et tout état de la machine de Minsky devient une place dans le réseau de Petri étendu. Pour changer d'états, on réutilise les transitions de Minsky où les tests à 0 sont donc traduits par des arcs inhibiteurs provenant de la place représentant le compteur à tester. Enfin, on a un unique jeton qui représente l'état actuel pendant l'exécution de la machine.
-\end{proof}
+Dès lors, de nombreuses de leurs propriétés passent de décidable à indécidable. Nous nous penchons en particulier sur l'accessibilité qui se trouve être décidable avec une complexité d'Ackermann (fonction prenant la forme d'une tour d'exponentielles) dans les réseaux classiques, tandis qu'elle devient indécidable dans les réseaux étendus. L'accessibilité d'un marquage dans un réseau de Petri étendu donné est donc équivalente à déterminer l'acceptation d'une configuration par une machine de Turing et, par extension, son arrêt, d'où le corollaire suivant.
 
-Dès lors, de nombreuses de leurs propriétés passent de décidable à indécidable. Nous nous penchons en particulier sur l'accessibilité qui se trouve être décidable avec une complexité d'Ackermann (fonction prenant la forme d'une tour d'exponentielles) dans les réseaux classiques, tandis qu'elle devient indécidable dans les réseaux étendus. L'accessibilité d'un marquage dans un réseau de Petri étendu donné est donc équivalente à déterminer l'acceptation d'une configuration par une machine de Turing et, par extension, son arrêt.
-
-\begin{corollary}[\text{\autocite[Théorème 11]{dufourd}}]
+\begin{corollary}
     Le problème d'accessibilité dans les réseaux de Petri à arcs inhibiteurs est indécidable.
 \end{corollary}
 
 \subsubsection{Arcs inhibiteurs, reset ou transfert : des constructions équivalentes}
+\label{section:inhibitory-to-reset}
 
-Le lien avec l'accessibilité pour les arcs restants (reset et transfert) est plus subtile. On peut en fait s'appuyer sur le résultat précédent. À partir d'un réseau $\mathcal{N}$ à arcs inhibiteurs, \cite{dufourd} construit un réseau $\mathcal{N}^+$ à arcs de reset de la façon suivante : on part du même réseau $\mathcal{N}$ mais, pour toute place $p \in P$ telle qu'il existe un arc inhibiteur $(p, t) \in P \times T$ (c'est-à-dire que $p$ est une place \textit{inhibitrice}), alors $p$ possède alors une place jumelle $p'$ telle que l'arc $(t, p')$ est un arc de reset et on redéfinit $F(p, t) := 0$. De cette façon, en posant $m^+(p') := m(p)$, on a le lemme suivant :
+Le lien avec l'accessibilité pour les arcs restants (reset et transfert) est plus subtile. On peut en fait s'appuyer sur le résultat précédent. En effet, nous cherchons à construire un réseau à arcs de reset $\mathcal{N}^+ := (P^+, T^+, F^+, m_0^+)$ qui puisse simuler un réseau à arcs inhibiteurs $\mathcal{N}$. Ainsi, \cite{dufourd} construit $\mathcal{N}^+$ à arcs de reset de la façon suivante : pour toute place $p \in P$ telle qu'il existe un arc inhibiteur $(p, t) \in P \times T$ (c'est-à-dire que $p$ est une place \textit{inhibitrice}), alors on crée dans $\mathcal{N}^+$ une place jumelle $p'$. Les transitions de $p'$ sont exactement les mêmes que $p$, à la seule différence qu'on n'a donc plus aucun arc inhibiteur $(p, t)$ ; à juste titre, ceux-ci sont remplacés par des arcs de reset $(t, p')$. Un invariant est imposé dans ce nouveau réseau : pour tout marquage $m^+$ de $\mathcal{N}^+$, on a forcément que pour toute place $p \in P^+,\ m^+(p) = m^+(p')$. Ceci va nous permettre de simuler nos tests à 0.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\linewidth]{img/reset-arc-petri-net.png}
+    \caption{Transformation d'un réseau à arcs inhibiteurs en réseau à arcs de reset par \cite{dufourd}.}
+    \label{fig:reset-arc-petri-net}
+\end{figure}
+
+Voyons une application de cette construction sur le réseau de la figure \ref{fig:reset-arc-petri-net}. Tout d'abord, nous constatons que la seule place de $\mathcal{N}$ est $p$, qui est inhibitrice. Comme promis, on a une place jumelle $p' \in P^+$ ayant les mêmes transitions que $p$ auxquelles on a remplacé les arcs inhibiteurs par des arcs de reset. En $m_0^+ := (0, 0)$, on constate que tirer $t_1$, qui vide $p'$, ne viole pas l'invariant étant donné que $p$ et $p'$ sont vides. Or, si l'on tire $t_3$ pour obtenir $m_1^+ := (1, 1)$, alors il devient impossible de tirer $t_1$ : cela aurait pour effet de vider $p'$ et, par conséquent, de créer un déséquilibre irrécupérable avec $p$, violant l'invariant du réseau. On ne peut donc tirer d'arc de reset que si la place jumelle impliquée est à $0$, ce qui permet la simulation de l'arc inhibiteur. C'est ainsi que l'on obtient le lemme \ref{lemma:inhibitory-reset-equivalent}, qui permet à \cite{dufourd} de prouver le théorème \ref{theorem:reset-reachability-undecidable}.
 
 \begin{lemma}
-    Soit $p$ une place inhibitrice dans $\mathcal{N}$, $p'$ sa place jumelle dans $\mathcal{N}^+$. Alors \[\forall m \in \reach{N}{m_0},\ m_0 \reachess m \Longleftrightarrow m_0 \reachess m^+.\]
+    \label{lemma:inhibitory-reset-equivalent}
+    Soit $p$ une place inhibitrice dans $\mathcal{N}$, $p'$ sa place jumelle dans $\mathcal{N}^+$. Notons $m^+$ tout marquage équivalent à un marquage $m$ de $\mathcal{N}$ dans $\mathcal{N^+}$. Alors \[\forall m \in \mathbb{N}^P,\ m_0 \reachess m \Longleftrightarrow m_0^+ \reachess m^+.\]
 \end{lemma}
 
-\begin{proof}
-    \textbf{À rédiger.} Cette preuve est une induction simple qui s'appuie sur la longueur d'une séquence de tirs $\sigma$ quelconque.
-\end{proof}
-
-Ce lemme est donc fondateur du théorème qui suit, puisqu'il permet d'assurer que le fonctionnement entre $\mathcal{N}$ et $\mathcal{N}^+$ est le même jusqu'à ce qu'un tir de reset soit effectué dans ce dernier, ce qui crée d'ailleurs un déséquilibre permanent entre deux places jumelles $p$ et $p'$. Ainsi :
-
 \begin{theorem}[\text{\autocite[Théorème 11]{dufourd}}]
+    \label{theorem:reset-reachability-undecidable}
     L'accessibilité est indécidable pour les graphes de reset et de transfert ayant 2 arcs étendus.
 \end{theorem}
 
-En effet, une construction similaire pour les arcs de transfert peut être réalisée, ce qui nous permet de conclure sur l'indécidabilité de l'accessibilité dans les réseaux utilisant ce type d'arcs.
+\begin{remark}
+    Une construction similaire peut être utilisée afin de prouver l'indécidabilité de l'accessibilité dans les réseaux à arcs de transfert.
+\end{remark}
 
 \subsection{Réseaux continus}
 
@@ -547,7 +574,7 @@ La variante continue des réseaux de Petri offre de nouvelles sémantiques de fo
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.5\linewidth]{img/continuous-reachability.png}
-    \caption{Accessibilité : Discret VS. Continu. }
+    \caption{Accessibilité : Discret VS. Continu.}
     \label{fig:continuous-reachability}
 \end{figure}
 
@@ -608,26 +635,7 @@ Dans les réseaux de Petri discrets étendus par des arcs inhibiteurs, de transf
 
 Nous nous inspirons de \cite{almagor_et_al} qui ont eu une idée fondatrice dans les $\mathbb{Q}$VASS (\textit{Continuous} Vector Addition System with States). En effet, pour $\mathcal{V}$ un $\mathbb{Q}$VASS donné, un nouveau $\mathbb{Q}$VASS $\mathcal{V}'$ est créé dans lequel, pour toute paire d'états $(p, q)$ de $\mathcal{V}$ telle qu'il existe une transition labellisée de $p$ à $q$, une paire d'états intermédiaires $(r_p, r_q)$ est ajoutée, ce qui permet de garantir que les compteurs, après la transition de $p$ à $q$, ne puissent avoir subi qu'une affectation discrète.
 
-Nous allons nous inspirer de cette construction pour nos CEPNs afin de simuler des machines de Minsky. En effet, on souhaite construire un réseau continu à arcs inhibiteurs $\overline{\mathcal{N}}$ tel que tout passage de $p$ à $q$ dans $\mathcal{N}$ se fasse de manière discrète. De cette façon, on réduira le problème d'accessibilité de la variante continue étendue au problème de l'arrêt d'une machine de Minsky, dont l'exécution est séquentielle.
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.85\linewidth]{img/minsky-machine-to-petri-net.png}
-    \caption{Machine de Minsky implémentée en un réseau de Petri.}
-    \label{fig:minsky-net}
-\end{figure}
-
-Pour simuler l'exécution d'une machine de Minsky $\mathcal{M} = (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$, on pose $P := Q_{\mathcal{M}} \cup \{c_1, c_2\}$ et $T := T_{\mathcal{M}}$. Ensuite, on définit $F$ de la manière suivante ; pour toute transition $t \in T_{\mathcal{M}}$ de $s$ à $s'$ : \begin{itemize}
-    \item Si $t$ est un test à 0 sur $c_i$, alors $F(s, t) = F(t, s') = 1$ et $\inhibitor(c_i, t) = 1$ d'où $F(c_i, t) = F(t, c_i) = 0$.
-    \item Si $t$ décrémente $c_i$ après un test de positivité stricte, alors $F(s, t) = F(t, s') = F(c_i, t) = 1$.
-    \item Si $t$ incrémente $c_i$, alors $F(s, t) = F(t, s') = F(t, c_i) = 1$.
-\end{itemize}
-On encode ensuite toute configuration $(q_k, i, j)$ de $\mathcal{M}$ dans un marquage $m \in \mathbb{Q}_+^{P}$ tel que : \begin{itemize}
-    \item $m(q_k) = 1$ et $\forall l \neq k,\ m(q_l) = 0$.
-    \item $m(c_i) = c_i$ (la valeur du compteur).
-\end{itemize}
-
-Cette construction pourrait fonctionner dans les réseaux discrets, comme on peut le voir dans la machine de Minsky implémentée dans un réseau de Petri (figure \ref{fig:minsky-net}). Or, notre réseau étant continu, nous devons l'améliorer afin d'assurer une exécution discrète.
+Nous allons nous inspirer de cette construction pour nos CEPNs afin de simuler des machines de Minsky. En effet, on souhaite construire un réseau continu à arcs inhibiteurs $\overline{\mathcal{N}}$ tel que tout passage de $p$ à $q$ dans $\mathcal{N}$ se fasse de manière discrète. De cette façon, on réduira le problème d'accessibilité de la variante continue étendue au problème de l'arrêt d'une machine de Minsky, dont l'exécution est séquentielle. Nous allons en réalité fortement nous baser sur la construction de la section \ref{section:inhibitory-reachability}. Celle-ci fonctionne dans les réseaux discrets, comme on peut le voir dans la machine de Minsky implémentée dans un réseau de Petri (figure \ref{fig:minsky-net}). Or, notre réseau étant continu, nous devons l'améliorer afin d'assurer une exécution discrète.
 
 \subsubsection{De discret à continu : construction, définitions, propriétés}
 
@@ -730,7 +738,7 @@ Notre objectif est désormais de prouver l'équivalence entre notre construction
     Soient $m, m' \in \Phi(\reach{M}{\rho_0})$. Supposons qu'il existe une séquence de tirs $\sigma \in (\mathbb{Q} \times T)^*$ telle que $m \creaches[\sigma] m'$. Sans perte de généralité, supposons également que $m(q) = 1$, d'où $m(\overline{q}) = 0$. Dans la disjonction de cas suivante, les séquences de tirs valides qui permettent donc de conclure sur l'accessibilité de $m'$ sont marqués par des crochets doubles $[\![\cdot]\!]$. Cela nous permettra de conclure plus aisément sur leur appartenance à $\Psi(\runs{\mathcal{M}})$.
     \begin{itemize}
         \item $\mathbf{(m \reaches[t_k^-] m_k^-)}$ : Par construction de $\Psi$, on a donc $p_k \in \overline{P}$ telle que $m(p_k) = 1$. Ainsi, par construction de $\overline{\mathcal{N}}$ également, on a $t_k^-$ sensibilisée. En tirant celle-ci avec $m \creaches[\alpha_k^- t_k^-] m_k^-$ où $0 < \alpha_k^- < 1$, on sait que $t_k^+$ ne peut être tirée à cause du test à 0 de l'arc inhibiteur $(q, t_k^+)$ ; or, $m_k^-(\overline{ref}) = \alpha_k^-$ et donc $\overline{ref(q)}$ est la seule transition nouvellement sensibilisée.
-        En la tirant avec $m_k^- \creaches[\overline{\alpha_k^-}] \overline{m_k^-}$ où $0 < \overline{\alpha_k^-} \leq \alpha_k^-$, on aurait donc $\overline{m_k^-}(\overline{q}) = \overline{\alpha_k^-}$. Par le lemme \ref{lemma:rational-lock}, on débouche dans tous les cas suivants sur un marquage purement rationnel et donc $m'$ ne sera pas atteint. Supposons donc que $\alpha_k^- = 1$.
+        En la tirant avec $m_k^- \creaches[\overline{\alpha_k^-}t_k^-] \overline{m_k^-}$ où $0 < \overline{\alpha_k^-} \leq \alpha_k^-$, on aurait donc $\overline{m_k^-}(\overline{q}) = \overline{\alpha_k^-}$. Par le lemme \ref{lemma:rational-lock}, on débouche dans tous les cas suivants sur un marquage purement rationnel et donc $m'$ ne sera pas atteint. Supposons donc que $\alpha_k^- = 1$.
         \item $\mathbf{(m_k^- \reaches[\overline{ref(q)}] m_k^+)}$ : La seule transition nouvellement sensibilisée est ainsi $\overline{ref(q)}$ car $m_k^-(\overline{ref}) = 1$, ce qui empêche toujours $t_k^+$ d'être sensibilisée. En la tirant de sorte que $m_k^- \creaches[\overline{\alpha_k} \overline{ref(q)}] m_k^+$ où $0 < \overline{\alpha_k} < 1$, aucune transition n'est nouvellement sensibilisée. Supposons donc que $\overline{\alpha_k} = 1$.
         \item $\mathbf{[\![m_k^+ \creaches[\boldsymbol{\alpha}_k^+t_k^+] m_{k+1}]\!]}$ : On a donc $t_k^+$ nouvellement sensibilisée. En la tirant telle que $m_k^+ \creaches[\alpha_k^+ t_k^+] m_{k+1}$ où $0 < \alpha_k \leq 1$, il vient que $m_{k+1}(p_{k+1}) = \alpha_k^+$. Par conséquent, $\overline{t_{k+1}^-}$ est nouvellement sensibilisée. Si $\alpha_k^+ = 1$, alors $m_{k+1}$ est un marquage discret et l'on peut continuer ainsi par induction, d'où l'on atteindra finalement $m'$. Sinon, $0 < \alpha_{k}^+ < 1$ et il vient le sous-cas suivant.
         \item $\mathbf{(m_{k+1} \creaches[\boldsymbol{\alpha}_{k+1}^- \overline{t_{k+1}^-}] m_{k+1}^-)}$ : Comme $m_{k+1}(p_{k+1}) = \alpha_k^+$ et $m_{k+1}(\overline{q}) = 1$, alors $\overline{t_{k+1}^-}$ est sensibilisée. En tirant celle-ci telle que $m_{k+1} \creaches[\alpha_{k+1}^- \overline{t_{k+1}^-}] m_{k+1}^-$ où nécessairement $0 < \alpha_{k+1}^- \leq \alpha_k^+$, alors $m_{k+1}^-(\overline{r_{t_{k+1}^-}}) = m_{k+1}^-(ref) = \alpha_{k+1}^-$ et par conséquent, $ref(q)$ est nouvellement sensibilisée. Observons que si l'on tire cette dernière telle que $m_{k+1}^- \creaches[\overline{\alpha_{k+1}} ref(q)] \overline{m_{k+1}}$ où $0 < \overline{\alpha_{k+1}} \leq \alpha_{k+1}^-$ nécessairement, alors $\overline{m_{k+1}}(q), \overline{m_{k+1}}(\overline{q}) > 0$ et on obtiendra a fortiori une situation bloquante par le lemme \ref{lemma:rational-lock}. Supposons donc que l'on ne tire pas cette transition.
@@ -741,13 +749,7 @@ Notre objectif est désormais de prouver l'équivalence entre notre construction
 
 \subsubsection{Équivalence aux machines de Minsky : le retour}
 
-Ainsi, nous tendons à prouver que les machines de Minsky sont équivalentes aux réseaux de Petri continus ainsi construits. Or, en réalité, il est encore impossible de le démontrer : notre réseau transforme les compteurs de la machine de Minsky en places, mais il est possible d'avoir une séquence alternée de tirs continus. On pourrait donc avoir un nombre purement rationnel de jetons dans ces places, ce qui pourrait fausser le comportement de l'implémentation de notre machine de Minsky. Nous allons donc construire une machine de Minsky $\overline{\mathcal{M}}$ trivialement équivalente à $\mathcal{M}$.
-
-Tout d'abord, soit $q \in Q_{\mathcal{M}}$ un état. S'il existe une transition labellisée $t \in T_{\mathcal{M}}$ telle que $q \in \postb{t}$ et $t$ change la valeur d'un compteur de $\mathcal{M}$, alors on dit que $q$ est \textit{variante}. Ainsi, pour toute place variante $q$ de $\mathcal{M}$, on construit dans $\overline{\mathcal{M}}$ une place $q'$ dite de \textit{stabilisation}. Ainsi, dans $\overline{\mathcal{M}}$, $q'$ "absorbe" les transitions entrantes de $q$ dans $\mathcal{M}$, c'est-à-dire $\preb{q'} := \preb{q}$, et la seule transition sortante de $q'$ et entrante dans $q$ devient $t_q$, permettant de passer de $q'$ à $q$ sans modification du compteur : on définit donc $\postb{q'}, \preb{q} := \{t_q\}$. Le reste des transitions et des places reste parfaitement intact. Ce nouvel état permet donc de stabiliser les compteurs dans $\overline{\mathcal{N}}$. Ainsi, comme les nouvelles transitions n'affectent pas le comportement de l'ancienne machine sur les compteurs ni ne modifient autrement que par la longueur les exécutions de $\mathcal{M}$, nous affirmons que $\overline{\mathcal{M}}$ est équivalente à $\mathcal{M}$. Dans les paragraphes suivants, nous admettons que les machines de Minsky ont la forme de $\overline{\mathcal{M}}$ et on suppose que l'on a donc : \begin{itemize}
-    \item Une machine de Minsky $\mathcal{M} := (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$ où $Q_{\mathcal{M}} := \{q_0, \cdots, q_m\},\ m \in \mathbb{N}$ et $\rho_0 = (q_0, 0, 0)$.
-    \item Un réseau de Petri continu à arcs inhibiteurs $\mathcal{N} := (P, T, F, \inhibitor, m_0)$ simulant $\mathcal{M}$ où donc $m_0 := \Phi(\rho_0)$.
-\end{itemize}
-Un exemple d'une telle construction a été produit dans la figure \ref{fig:temporized-minsky-machine}. Les transitions rouges du réseau de Petri sont les transitions continues avec les contraintes telles que définies précédemment.
+Ainsi, nous tendons à prouver que les machines de Minsky sont équivalentes aux réseaux de Petri continus ainsi construits. Or, en réalité, il est encore impossible de le démontrer : notre réseau transforme les compteurs de la machine de Minsky en places, mais il est possible d'avoir une séquence alternée de tirs continus. On pourrait donc avoir un nombre purement rationnel de jetons dans ces places, ce qui pourrait fausser le comportement de l'implémentation de notre machine de Minsky. Nous allons donc construire une machine de Minsky $\overline{\mathcal{M}}$ trivialement équivalente à $\mathcal{M}$. Un exemple de construction avec en parallèle un réseau de Petri est visible dans la figure \ref{fig:temporized-minsky-machine}. Les transitions rouges du réseau de Petri sont les transitions continues avec les contraintes telles que définies précédemment.
 
 \begin{figure}[ht]
     \centering
@@ -755,6 +757,11 @@ Un exemple d'une telle construction a été produit dans la figure \ref{fig:temp
     \caption{Transformation triviale de la machine de Minsky et de son réseau de Petri correspondant.}
     \label{fig:temporized-minsky-machine}
 \end{figure}
+
+Tout d'abord, soit $q \in Q_{\mathcal{M}}$ un état. S'il existe une transition labellisée $t \in T_{\mathcal{M}}$ telle que $q \in \postb{t}$ et $t$ change la valeur d'un compteur de $\mathcal{M}$, alors on dit que $q$ est \textit{variante}. Ainsi, pour toute place variante $q$ de $\mathcal{M}$, on construit dans $\overline{\mathcal{M}}$ une place $q'$ dite de \textit{stabilisation}. Ainsi, dans $\overline{\mathcal{M}}$, $q'$ "absorbe" les transitions entrantes de $q$ dans $\mathcal{M}$, c'est-à-dire $\preb{q'} := \preb{q}$, et la seule transition sortante de $q'$ et entrante dans $q$ devient $t_q$, permettant de passer de $q'$ à $q$ sans modification du compteur : on définit donc $\postb{q'}, \preb{q} := \{t_q\}$. Le reste des transitions et des places reste parfaitement intact. Ce nouvel état permet donc de stabiliser les compteurs dans $\overline{\mathcal{N}}$. Ainsi, comme les nouvelles transitions n'affectent pas le comportement de l'ancienne machine sur les compteurs ni ne modifient autrement que par la longueur les exécutions de $\mathcal{M}$, nous affirmons que $\overline{\mathcal{M}}$ est équivalente à $\mathcal{M}$. Dans les paragraphes suivants, nous admettons que les machines de Minsky ont la forme de $\overline{\mathcal{M}}$ et on suppose que l'on a donc : \begin{itemize}
+    \item Une machine de Minsky $\mathcal{M} := (Q_{\mathcal{M}}, T_{\mathcal{M}}, c_1, c_2, \rho_0)$ où $Q_{\mathcal{M}} := \{q_0, \cdots, q_m\},\ m \in \mathbb{N}$ et $\rho_0 = (q_0, 0, 0)$.
+    \item Un réseau de Petri continu à arcs inhibiteurs $\mathcal{N} := (P, T, F, \inhibitor, m_0)$ simulant $\mathcal{M}$ où donc $m_0 := \Phi(\rho_0)$.
+\end{itemize}
 
 La propriété suivante est fondamentale. En effet, elle garantit que toute configuration de $\mathcal{M}$ adaptée en marquage $m$ dans $\mathcal{N}$ débouchera sur un marquage $m'$ de la même forme, en prenant en compte que les transitions tirées pour passer de $m$ à $m'$ sont précisément des exécutions de $\mathcal{M}$.
 
@@ -833,7 +840,7 @@ Notre objectif est désormais de démontrer le lemme \ref{lemma:sequence-unwrap-
     Supposons que $\Phi(\rho) \in \reach{N}{m_0}$. Alors il existe une séquence de tirs $\sigma \in T^*$ telle que $m_0 \reaches[\sigma] \Phi(\rho)$. Comme $m_0 \reaches[\sigma] \Phi(\rho)$, alors $|\sigma| \equiv 0\ [3]$ par la proposition \ref{proposition:triplet-sequence}. Ainsi, il existe une unique exécution $\delta$ telle que $\Psi(\delta) = \sigma$ par le lemme \ref{lemma:seq-to-run}. On a donc que $m_0 = \Phi(\rho_0) \reaches[\sigma = \Psi(\delta)] \Phi(\rho)$. On en conclut que $\rho_0 \reaches[\delta] \rho$ par la propriété \ref{property:exec-to-run}, d'où $\rho \in \reach{M}{\rho_0}$.
 \end{proof}
 
-Enfin, le théorème suivant appuie l'équivalence entre notre réseau et notre machine de Minsky. La condition suffisante est prouvée par récurrence en la longueur des exécutions de $\mathcal{M}$. En revanche, la condition nécessaire est prouvée directement en nous appuyant sur les lemmes \ref{lemma:continuous-to-discrete-sequence} et \ref{lemma:sequence-unwrap-to-execution}, qui permettent d'aboutir élégamment au résultat tant recherché.
+Enfin, le théorème suivant appuie l'équivalence entre notre réseau et notre machine de Minsky. La condition suffisante est prouvée par récurrence en la longueur des exécutions de $\mathcal{M}$. En revanche, la condition nécessaire est prouvée directement en nous appuyant sur les lemmes \ref{lemma:continuous-to-discrete-sequence} et \ref{lemma:sequence-unwrap-to-execution}, qui permettent d'aboutir élégamment au résultat recherché.
 
 \begin{theorem}
     \label{theorem:inh-petri-minsky-equivalence}
@@ -863,14 +870,6 @@ Enfin, le théorème suivant appuie l'équivalence entre notre réseau et notre 
             Ainsi, pour passer de $q_n$ à $q_{n+1}$, deux transitions $t_n$ et $t_n'$ ont été tirées.
             On a donc une séquence de transitions labellisées $(t_k)_{k \leq n}$ telles que $\rho_0 \reaches[t_0] \cdots \reaches[t_{n-2}] \rho_n' \reaches[t_{n-1}] \rho_n \reaches[t_n] \rho_{n+1}$ avec $\rho_n' := (q_n', i_n, j_n),\ \rho_n := (q_n, i_n, j_n),\ \rho_{n+1} := (q_{n+1}, i_{n+1}, j_{n+1})$, d'où l'on a $\rho_n \in \reach[n]{M}{\rho_0}$ et par hypothèse de récurrence, $\Phi(\rho_n) \in \creach[3n]{N}{\Phi(\rho_0)}$.
             Par un raisonnement analogue au paragraphe précédent, on en conclut que $\Phi(\rho_{n+1}) \in \reach[3(n+1)]{N}{\Phi(\rho_0)}$.
-            % Supposons que $\Phi(\rho_n)(q) = 1$.
-            % Par construction de $\mathcal{N}$, $t_n$ est implémentée par un ensemble de transitions $\{t_n^-, t_n^+, \overline{t_n^-}', \overline{t_n^+}'\}$.
-            % Alors on tire $\sigma = (t_n^-, \overline{ref(q)}, t_n^+, \overline{t_n^-}', ref(q), \overline{t_n^+}') \in T^6$.
-            % On obtient ainsi un marquage $m_{n+1}$ tel que $m_{n+1}(q_n) = 0$ et $m_{n+1}(q_{n+1}) = 1$.
-            % Les transitions $[\![\sigma]\!]$ conservent l'action de $t_n$ dans $\mathcal{M}$ sur les compteurs $(c_1, c_2)$, donc $m_{n+1}(c_1) = i_{n+1}$ et $m_{n+1}(c_2) = j_{n+1}$.
-            % De plus, $k + 6$ transitions ont été franchies au total, d'où $3n + 6 \leq k + 6 \leq 6n + 6 \Longrightarrow 3(n+1) \leq k' \leq 6(n+1)$ avec $k' := k + 6$.
-            % Ainsi, $m_{n+1} = \Phi(\rho_{n+1})$ et comme $\Phi(\rho_0) \reachess \Phi(\rho_n) \reaches[\sigma] \Phi(\rho_{n+1})$, alors $\Phi(\rho_{n+1}) \in \reach[k']{N}{\Phi(\rho_0)}$.
-            % Un raisonnement analogue est applicable si $\Phi(\rho_n)(\overline{q}) = 1$.
         \end{itemize}
         \textbf{Condition nécessaire.} Supposons que $\Phi(\rho_{\omega_n}) \in \creach{N}{\Phi(\rho_0)}$.
         Alors il existe une séquence de tirs $\sigma \in (\mathbb{Q} \times T)^*$ telle que $\Phi(\rho_0) \creaches[\sigma] \Phi(\rho_{\omega_n})$.
@@ -890,7 +889,7 @@ Enfin, le théorème suivant appuie l'équivalence entre notre réseau et notre 
 
 \subsection{Arcs de reset}
 
-Dans cette section, nous nous intéressons à l'accessibilité via l'ajout d'arcs de reset à nos réseaux de Petri continus. En réalité, leur implémentation dans cette nouvelle sémantique est naturellement construite en s'appuyant sur les mêmes définitions que dans l'environnement discret, mais en ajoutant les fractions de tirs du côté de la matrice d'incidence seulement. Ainsi, à l'instar des machines de Minsky et des réseaux à arcs inhibiteurs, nous cherchons à simuler des CEPNs à arcs inhibiteurs à partir d'arcs de reset.
+Dans cette section, nous nous intéressons à l'accessibilité via l'ajout d'arcs de reset à nos réseaux de Petri continus. En réalité, leur implémentation dans cette nouvelle sémantique est naturellement construite en s'appuyant sur les mêmes définitions que dans l'environnement discret, mais en ajoutant les fractions de tirs à l'équation caractéristique. Ainsi, à l'instar des machines de Minsky et des réseaux à arcs inhibiteurs, nous cherchons à simuler des CEPNs à arcs inhibiteurs à partir d'arcs de reset.
 
 \subsubsection{D'inhibiteur à reset : construction, définitions, propriétés}
 
@@ -902,17 +901,17 @@ Dans cette section, nous nous intéressons à l'accessibilité via l'ajout d'arc
             \reset(p, t) = 0 & \text{sinon.}
         \end{cases}\]
     \end{itemize}
-    Ainsi, si $\reset(p, t) = p$, alors nécessairement $F(p, t) = F(t, p) = 0$. Cette matrice nous permet donc de redéfinir l'équation caractéristique de la façon suivante : pour tous marquages $m, m'$ tels que $m \reaches[\alpha t] m',\ 0 < \alpha \leq 1$, \[m' = m + \alpha.\incid(t) - \alpha.\reset(t)\] où $\reset(t)$ est un vecteur de $P^P$.
+    Ainsi, si $\reset(p, t) = p$, alors nécessairement $F(p, t) = F(t, p) = 0$. Cette matrice nous permet donc de redéfinir l'équation caractéristique de la façon suivante : pour tous marquages $m, m'$ tels que $m \reaches[\alpha t] m',\ 0 < \alpha \leq 1$, \[m' = m + \alpha.\incid(t) - \alpha.\reset(t)\] où $\reset(t)$ est un vecteur de $P$ indexé par $P$.
 \end{definition}
 
-Nous nous penchons alors sur le problème d'accessibilité en nous inspirant des travaux de \cite{dufourd} dans leurs réseaux de Petri classiques. Ces derniers reconstruisent le réseau en s'appuyant sur la création de places jumelles $p'$ pour toute place $p$ impliquée dans le test à 0 d'un arc inhibiteur : c'est une place inhibitrice. Soit donc $\mathcal{N} = (P, T, F, \inhibitor, m_0)$ un réseau de Petri à arcs inhibiteurs. On pose
+Nous nous penchons alors sur le problème d'accessibilité en nous inspirant des travaux de \cite{dufourd} dans les réseaux de Petri classiques, comme nous l'avons observé dans la section \ref{section:inhibitory-to-reset}. Nous vérifions donc ici que celle-ci peut être réappliquée au cas continu. Formellement, on a donc une reconstruction du réseau en s'appuyant sur la création de places jumelles $p'$ pour toute place $p$ impliquée dans le test à 0 d'un arc inhibiteur : c'est une place inhibitrice. Soit donc $\mathcal{N} = (P, T, F, \inhibitor, m_0)$ un réseau de Petri à arcs inhibiteurs. On pose
 \begin{equation*}
     \function{\indicator_{\inhibitor}}{P}{\{0, 1\}}{p}{\begin{cases}
         1 & \text{si } \exists t \in T,\ \inhibitor(p, t) = 1. \\
         0 & \text{sinon.}
     \end{cases}}
 \end{equation*}
-la fonction indicatrice d'inhibition et $\mathbb{I}_{\mathcal{N}} := \indicator_{\inhibitor}^{-1}(\{1\}) = \{p \in P \mid \indicator_{\inhibitor}(p) = 1\}$ l'ensemble des places inhibitrices de $\mathcal{N}$. Ils définissent $\mathcal{N}^+ := (P^+, T, F^+, \reset, m_0^+)$ le réseau de Petri jumeau à arcs de reset où : \begin{enumerate}
+la fonction indicatrice d'inhibition et $\mathbb{I}_{\mathcal{N}} := \indicator_{\inhibitor}^{-1}(\{1\}) = \{p \in P \mid \indicator_{\inhibitor}(p) = 1\}$ l'ensemble des places inhibitrices de $\mathcal{N}$. On définit $\mathcal{N}^+ := (P^+, T, F^+, \reset, m_0^+)$ le réseau de Petri jumeau à arcs de reset où : \begin{enumerate}
     \item $P^+ := P \cup P'$, où $P' := \{p' : p \in \mathbb{I}_{\mathcal{N}}\}$ (avec $P \cap P' = \emptyset$).
     \item La relation de flots $F^+$ est définie, $\forall (p, t) \in P \times T$, par : \[\begin{cases}
         F^+(p, t) = F^+(t, p') = 0 & \text{si } \inhibitor(p, t) = 1.\\
@@ -929,17 +928,9 @@ la fonction indicatrice d'inhibition et $\mathbb{I}_{\mathcal{N}} := \indicator_
             0  & \text{sinon.}
         \end{cases}$
     \end{itemize}
-    \item Pour tout tir $m \creaches[\alpha t] m'$, on redéfinit l'équation caractéristique de la manière suivante : \[m' = m + \alpha.\incid(t) - \reset(t)\]
 \end{enumerate}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.5\linewidth]{img/reset-arc-petri-net.png}
-    \caption{Transformation d'un réseau à arcs inhibiteurs en réseau à arcs de reset par \cite{dufourd}.}
-    \label{fig:reset-arc-petri-net}
-\end{figure}
-
-La figure \ref{fig:reset-arc-petri-net} nous montre un exemple concret d'une telle construction. La relation de flots avec tout arc de $p$ est donc reproduite à l'identique pour $p'$, à l'exception de l'arc inhibiteur dont la liaison avec $p$ est retirée pour la transformer en arc de reset sur $p'$.
+Pour rappel, la figure \ref{fig:reset-arc-petri-net} nous montre un exemple concret d'une telle construction. La relation de flots avec tout arc de $p$ est donc reproduite à l'identique pour $p'$, à l'exception de l'arc inhibiteur dont la liaison avec $p$ est retirée pour la transformer en arc de reset sur $p'$.
 
 \subsubsection{Équivalence des réseaux par isomorphisme}
 
