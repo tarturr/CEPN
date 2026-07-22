@@ -901,7 +901,7 @@ Dans cette section, nous nous intéressons à l'accessibilité via l'ajout d'arc
             \reset(p, t) = 0 & \text{sinon.}
         \end{cases}\]
     \end{itemize}
-    Ainsi, si $\reset(p, t) = p$, alors nécessairement $F(p, t) = F(t, p) = 0$. Cette matrice nous permet donc de redéfinir l'équation caractéristique de la façon suivante : pour tous marquages $m, m'$ tels que $m \reaches[\alpha t] m',\ 0 < \alpha \leq 1$, \[m' = m + \alpha.\incid(t) - \alpha.\reset(t)\] où $\reset(t)$ est un vecteur de $P$ indexé par $P$.
+    Ainsi, si $\reset(p, t) = p$, alors nécessairement $F(p, t) = F(t, p) = 0$. Cette matrice nous permet donc de redéfinir l'équation caractéristique de la façon suivante : pour tous marquages $m, m'$ tels que $m \reaches[\alpha t] m',\ 0 < \alpha \leq 1$, \[m' = m + \alpha.\incid(t) - \reset(t)\] où $\reset(t)$ est un vecteur de $P$ indexé par $P$.
 \end{definition}
 
 Nous nous penchons alors sur le problème d'accessibilité en nous inspirant des travaux de \cite{dufourd} dans les réseaux de Petri classiques, comme nous l'avons observé dans la section \ref{section:inhibitory-to-reset}. Nous vérifions donc ici que celle-ci peut être réappliquée au cas continu. Formellement, on a donc une reconstruction du réseau en s'appuyant sur la création de places jumelles $p'$ pour toute place $p$ impliquée dans le test à 0 d'un arc inhibiteur : c'est une place inhibitrice. Soit donc $\mathcal{N} = (P, T, F, \inhibitor, m_0)$ un réseau de Petri à arcs inhibiteurs. On pose
